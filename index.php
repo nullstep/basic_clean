@@ -1,6 +1,6 @@
 <?php
 
-// not_wp uploads handler
+// basic_clean uploads handler
 
 if (isset($_GET['file'])) {
 	if ($_GET['file'] != '') {
