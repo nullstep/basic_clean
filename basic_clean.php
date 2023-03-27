@@ -27,34 +27,42 @@ define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
 //  ███    ███  ███    ███  ███    ███    ███         
 //  ████████▀    ▀██████▀    ▀█    █▀     ███         
 
-// page views ignore ips
-
-define('_IGNORE_BASIC_CLEAN', [
-	'127.0.0.1'
-]);
-
 // basic_clean args
 
 define('_ARGS_BASIC_CLEAN', [
-	'bc_cleaning' => [
+	'bc_ignore' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_position' => [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_blocks' => [
+
+	'bc_gid' => [
 		'type' => 'string',
-		'default' => 'yes'
+		'default' => ''
 	],
-	'bc_global' => [
+	'bc_indent' => [
 		'type' => 'string',
-		'default' => 'yes'
+		'default' => '5'
 	],
-	'bc_classic' => [
+
+	'bc_logo' => [
 		'type' => 'string',
-		'default' => 'yes'
+		'default' => ''
 	],
-	'bc_head' => [
+	'bc_feeds' => [
 		'type' => 'string',
-		'default' => 'yes'
+		'default' => 'default'
+	],
+	'bc_login' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_path' => [
+		'type' => 'string',
+		'default' => 'admin'
 	],
 	'bc_options' => [
 		'type' => 'string',
@@ -68,22 +76,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_logo' => [
-		'type' => 'string',
-		'default' => ''
-	],
-	'bc_login' => [
-		'type' => 'string',
-		'default' => ''
-	],
-	'bc_path' => [
-		'type' => 'string',
-		'default' => 'admin'
-	],
-	'bc_gid' => [
-		'type' => 'string',
-		'default' => ''
-	],
 	'bc_mimes' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -92,51 +84,88 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_htaccess' => [
-		'type' => 'string',
-		'default' => 'yes'
-	],
 	'bc_shortcodes' => [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_indent' => [
+
+	'bc_cleaning' => [
 		'type' => 'string',
-		'default' => '5'
+		'default' => 'yes'
 	],
-	'bc_feeds' => [
+	'bc_htaccess' => [
 		'type' => 'string',
-		'default' => 'default'
+		'default' => 'yes'
 	],
-	'bc_css' => [
+	'bc_global' => [
 		'type' => 'string',
-		'default' => ''
+		'default' => 'yes'
 	],
-	'bc_js' => [
+	'bc_classic' => [
 		'type' => 'string',
-		'default' => ''
+		'default' => 'yes'
+	],
+	'bc_blocks' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
+	'bc_head' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
+
+	'bc_form_json' => [
+		'type' => 'string',
+		'default' => json_encode([[
+			'name' => [
+				'label' => 'Name',
+				'type' => 'text'
+			],
+			'email' => [
+				'label' => 'Email',
+				'type' => 'email'
+			],
+			'message' => [
+				'label' => 'Message',
+				'type' => 'textarea'
+			]
+		]])
+	],
+	'bc_form_success' => [
+		'type' => 'string',
+		'default' => 'Thanks for the message. We will respond as soon as possible.'
+	],
+	'bc_form_email' => [
+		'type' => 'string',
+		'default' => get_option('admin_email')
+	],
+	'bc_form_active' => [
+		'type' => 'string',
+		'default' => 'no'
 	]
 ]);
 
 // basic_clean admin 
 
 define('_ADMIN_BASIC_CLEAN', [
-	'general' => [
-		'label' => 'General',
+	'options' => [
+		'label' => 'Options',
 		'columns' => 4,
 		'fields' => [
-			'bc_logo' => [
-				'label' => 'WP Login Logo',
-				'type' => 'file'
+			'bc_ignore' => [
+				'label' => 'IP Addresses to Ignore for Page View Count',
+				'type' => 'text'
 			],
-			'bc_login' => [
-				'label' => 'Change Login URL',
+			'bc_position' => [
+				'label' => 'Show in Admin Menu',
 				'type' => 'check'
-			],
-			'bc_path' => [
-				'label' => 'Login URL',
-				'type' => 'input'
-			],
+			]
+		]
+	],
+	'extras' => [
+		'label' => 'Extras',
+		'columns' => 4,
+		'fields' => [
 			'bc_gid' => [
 				'label' => 'Google Analytics ID',
 				'type' => 'input'
@@ -144,6 +173,16 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_indent' => [
 				'label' => 'Tab Indents',
 				'type' => 'input'
+			]
+		]
+	],
+	'general' => [
+		'label' => 'General',
+		'columns' => 4,
+		'fields' => [
+			'bc_logo' => [
+				'label' => 'WP Login Logo',
+				'type' => 'file'
 			],
 			'bc_feeds' => [
 				'label' => 'WP Feeds',
@@ -154,9 +193,13 @@ define('_ADMIN_BASIC_CLEAN', [
 					'custom' => 'Custom'
 				]
 			],
-			'bc_cleaning' => [
-				'label' => 'WP Cleanup Active',
+			'bc_login' => [
+				'label' => 'Change Login URL',
 				'type' => 'check'
+			],
+			'bc_path' => [
+				'label' => 'Login URL',
+				'type' => 'input'
 			],
 			'bc_options' => [
 				'label' => 'Set WP Options',
@@ -167,7 +210,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'check'
 			],
 			'bc_columns' => [
-				'label' => 'Post Columns Field',
+				'label' => 'Page/Post CSS Field',
 				'type' => 'check'
 			],
 			'bc_mimes' => [
@@ -178,12 +221,22 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Show Page/Post Views',
 				'type' => 'check'
 			],
-			'bc_htaccess' => [
-				'label' => 'Short Upload URLs',
-				'type' => 'check'
-			],
 			'bc_shortcodes' => [
 				'label' => 'Shortcodes Active',
+				'type' => 'check'
+			]
+		]
+	],
+	'cleanup' => [
+		'label' => 'Cleanup',
+		'columns' => 4,
+		'fields' => [
+			'bc_cleaning' => [
+				'label' => 'WP Cleanup Active',
+				'type' => 'check'
+			],
+			'bc_htaccess' => [
+				'label' => 'Short Upload URLs',
 				'type' => 'check'
 			],
 			'bc_global' => [
@@ -204,23 +257,25 @@ define('_ADMIN_BASIC_CLEAN', [
 			]
 		]
 	],
-	'css' => [
-		'label' => 'CSS',
-		'columns' => 1,
+	'forms' => [
+		'label' => 'Forms',
+		'columns' => 4,
 		'fields' => [
-			'bc_css' => [
-				'label' => 'Extra Styles',
+			'bc_form_json' => [
+				'label' => 'Forms Config',
 				'type' => 'code'
-			]
-		]
-	],
-	'js' => [
-		'label' => 'JS',
-		'columns' => 1,
-		'fields' => [
-			'bc_js' => [
-				'label' => 'Extra Scripts',
-				'type' => 'code'
+			],
+			'bc_form_success' => [
+				'label' => 'Forms Thanks Message',
+				'type' => 'text'
+			],
+			'bc_form_email' => [
+				'label' => 'Forms Email',
+				'type' => 'input'
+			],
+			'bc_form_active' => [
+				'label' => 'Forms Active',
+				'type' => 'check'
 			]
 		]
 	]
@@ -247,14 +302,14 @@ define('_API_BASIC_CLEAN', [
 	]
 ]);
 
-//   ▄████████   ▄█           ▄████████     ▄████████     ▄████████  
-//  ███    ███  ███          ███    ███    ███    ███    ███    ███  
-//  ███    █▀   ███          ███    ███    ███    █▀     ███    █▀   
-//  ███         ███          ███    ███    ███           ███         
-//  ███         ███        ▀███████████  ▀███████████  ▀███████████  
-//  ███    █▄   ███          ███    ███           ███           ███  
-//  ███    ███  ███▌    ▄    ███    ███     ▄█    ███     ▄█    ███  
-//  ████████▀   █████▄▄██    ███    █▀    ▄████████▀    ▄████████▀   
+//     ▄████████     ▄███████▄   ▄█   
+//    ███    ███    ███    ███  ███   
+//    ███    ███    ███    ███  ███▌  
+//    ███    ███    ███    ███  ███▌  
+//  ▀███████████  ▀█████████▀   ███▌  
+//    ███    ███    ███         ███   
+//    ███    ███    ███         ███   
+//    ███    █▀    ▄████▀       █▀ 
 
 class _bcAPI {
 	public function add_routes() {
@@ -289,6 +344,15 @@ class _bcAPI {
 		return rest_ensure_response(_bcSettings::get_settings());
 	}
 }
+
+//     ▄████████     ▄████████      ███          ███       ▄█   ███▄▄▄▄▄       ▄██████▄      ▄████████  
+//    ███    ███    ███    ███  ▀█████████▄  ▀█████████▄  ███   ███▀▀▀▀██▄    ███    ███    ███    ███  
+//    ███    █▀     ███    █▀      ▀███▀▀██     ▀███▀▀██  ███▌  ███    ███    ███    █▀     ███    █▀   
+//    ███          ▄███▄▄▄          ███   ▀      ███   ▀  ███▌  ███    ███   ▄███           ███         
+//  ▀███████████  ▀▀███▀▀▀          ███          ███      ███▌  ███    ███  ▀▀███ ████▄   ▀███████████  
+//           ███    ███    █▄       ███          ███      ███   ███    ███    ███    ███           ███  
+//     ▄█    ███    ███    ███      ███          ███      ███   ███    ███    ███    ███     ▄█    ███  
+//   ▄████████▀     ██████████     ▄████▀       ▄████▀    █▀     ▀█    █▀     ████████▀    ▄████████▀ 
 
 class _bcSettings {
 	protected static $option_key = _PLUGIN_BASIC_CLEAN . '-settings';
@@ -343,6 +407,15 @@ class _bcSettings {
 	}
 }
 
+//    ▄▄▄▄███▄▄▄▄       ▄████████  ███▄▄▄▄▄    ███    █▄   
+//  ▄██▀▀▀███▀▀▀██▄    ███    ███  ███▀▀▀▀██▄  ███    ███  
+//  ███   ███   ███    ███    █▀   ███    ███  ███    ███  
+//  ███   ███   ███   ▄███▄▄▄      ███    ███  ███    ███  
+//  ███   ███   ███  ▀▀███▀▀▀      ███    ███  ███    ███  
+//  ███   ███   ███    ███    █▄   ███    ███  ███    ███  
+//  ███   ███   ███    ███    ███  ███    ███  ███    ███  
+//   ▀█   ███   █▀     ██████████   ▀█    █▀   ████████▀ 
+
 class _bcMenu {
 	protected $slug = _PLUGIN_BASIC_CLEAN . '-menu';
 	protected $assets_url;
@@ -354,17 +427,37 @@ class _bcMenu {
 	}
 
 	public function add_page() {
-		add_menu_page(
-			_PLUGIN_BASIC_CLEAN,
-			_PLUGIN_BASIC_CLEAN,
-			'manage_options',
-			$this->slug,
-			[$this, 'render_admin'],
-			'data:image/svg+xml;base64,' . base64_encode(
-				'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500px" height="500px" viewbox="0 0 500 500"><path fill="#a7aaad" d="M250,9.8L42,129.9v240.2l208,120.1l208-120.1V129.9L250,9.8z M94,159.7c52-30,103.9-60.1,155.8-90.2 c51.9,30.2,104.1,60.2,156.1,90.2c-30.6,17.9-61.4,35.5-92.2,53c-21.3-12.4-42.7-24.4-63.9-36.7c-21.5,12-42.7,24.5-64.1,36.7 c0.2,24.9-0.6,49.8,0.4,74.6c21,11.4,41.3,24.1,62.1,36.1c2.2,0.9,4-1.5,6-2.3c29.6-17.2,59.4-34.2,89.1-51.3l1.8-2.4 c1.5,12.5,0.4,25.2,0.6,37.7c-20.9,12.1-41.9,24-62.7,36.2c-11.1,6-21.8,12.8-32.9,18.8l-1.9-0.4c-30.9-18.3-62.4-35.5-92.8-54.4 c-2.9,0.8-5.5,2.2-8,3.7c-17.6,10.6-35.6,20.6-53.1,31.3C93.7,280.2,94.1,220,94,159.7z M405.6,340.5 c-39.3,22.2-78,45.5-117.4,67.4c-0.1,0.8-0.4,2.5-0.5,3.3c-0.4-0.4-1.3-1.1-1.7-1.4c-12.2,6.6-24.1,13.8-36.1,20.8 c-37.9-21.8-75.7-43.8-113.4-65.8c10.8-5.9,21.4-12.3,32.2-18.2c27,15.8,54,31.5,81.1,46.9c39.5-22.9,78.9-45.8,118.5-68.6 c2.2-1.6,6.4-2.2,5.7-5.8c-0.1-30.4,0-60.7,0-91.1c10.8-5.9,21-12.8,32.2-17.9C405.5,253.5,406.6,297,405.6,340.5z"/><path fill="#a7aaad" d="M154.1,194.1c32.1-18.1,63.7-37,95.7-55.2c21.4,12.7,43.1,24.8,64.4,37.6c9.6-4.5,18.5-10.4,27.7-15.6l0.2-1.1 c-30.7-17.9-61.5-35.7-92.3-53.6c-40.1,23-80,46.5-120.2,69.6c-0.9,0.4-2.7,1.3-3.6,1.7c-0.6,30.2-0.1,60.4-0.3,90.6 c0.2,5.8-0.6,11.7,0.6,17.4c9-5.9,18.5-10.9,27.6-16.5C153.8,244.1,153.7,219.1,154.1,194.1z"/></svg>'
-			),
-			30
-		);
+		$entry = [
+			'page_title' => _PLUGIN_BASIC_CLEAN,
+			'menu_title' => _PLUGIN_BASIC_CLEAN,
+			'capability' => 'manage_options',
+			'menu_slug' => $this->slug,
+			'callback' => [$this, 'render_admin'],
+			'icon_url' => 'data:image/svg+xml;base64,' . base64_encode(
+				'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500px" height="500px" viewbox="0 0 500 500"><path fill="#a7aaad" d="M250,9.8L42,129.9v240.2l208,120.1l208-120.1V129.9L250,9.8z M94,159.7c52-30,103.9-60.1,155.8-90.2 c51.9,30.2,104.1,60.2,156.1,90.2c-30.6,17.9-61.4,35.5-92.2,53c-21.3-12.4-42.7-24.4-63.9-36.7c-21.5,12-42.7,24.5-64.1,36.7 c0.2,24.9-0.6,49.8,0.4,74.6c21,11.4,41.3,24.1,62.1,36.1c2.2,0.9,4-1.5,6-2.3c29.6-17.2,59.4-34.2,89.1-51.3l1.8-2.4 c1.5,12.5,0.4,25.2,0.6,37.7c-20.9,12.1-41.9,24-62.7,36.2c-11.1,6-21.8,12.8-32.9,18.8l-1.9-0.4c-30.9-18.3-62.4-35.5-92.8-54.4 c-2.9,0.8-5.5,2.2-8,3.7c-17.6,10.6-35.6,20.6-53.1,31.3C93.7,280.2,94.1,220,94,159.7z M405.6,340.5 c-39.3,22.2-78,45.5-117.4,67.4c-0.1,0.8-0.4,2.5-0.5,3.3c-0.4-0.4-1.3-1.1-1.7-1.4c-12.2,6.6-24.1,13.8-36.1,20.8 c-37.9-21.8-75.7-43.8-113.4-65.8c10.8-5.9,21.4-12.3,32.2-18.2c27,15.8,54,31.5,81.1,46.9c39.5-22.9,78.9-45.8,118.5-68.6 c2.2-1.6,6.4-2.2,5.7-5.8c-0.1-30.4,0-60.7,0-91.1c10.8-5.9,21-12.8,32.2-17.9C405.5,253.5,406.6,297,405.6,340.5z"/><path fill="#a7aaad" d="M154.1,194.1c32.1-18.1,63.7-37,95.7-55.2c21.4,12.7,43.1,24.8,64.4,37.6c9.6-4.5,18.5-10.4,27.7-15.6l0.2-1.1 c-30.7-17.9-61.5-35.7-92.3-53.6c-40.1,23-80,46.5-120.2,69.6c-0.9,0.4-2.7,1.3-3.6,1.7c-0.6,30.2-0.1,60.4-0.3,90.6 c0.2,5.8-0.6,11.7,0.6,17.4c9-5.9,18.5-10.9,27.6-16.5C153.8,244.1,153.7,219.1,154.1,194.1z"/></svg>'),
+			'position' => 30
+		];
+
+		if (_BC['bc_position'] == 'yes') {
+			add_menu_page(
+				$entry['page_title'],
+				$entry['menu_title'],
+				$entry['capability'],
+				$entry['menu_slug'],
+				$entry['callback'],
+				$entry['icon_url'],
+				$entry['position']				
+			);
+		}
+		else {
+			add_options_page(
+				$entry['page_title'],
+				$entry['menu_title'],
+				$entry['capability'],
+				$entry['menu_slug'],
+				$entry['callback']
+			);
+		}
 	}
 
 	public function register_assets() {
@@ -489,6 +582,15 @@ class _bcMenu {
 		echo '</div>';
 	}
 }
+
+//   ▄█         ▄██████▄      ▄██████▄    ▄█   ███▄▄▄▄▄    
+//  ███        ███    ███    ███    ███  ███   ███▀▀▀▀██▄  
+//  ███        ███    ███    ███    █▀   ███▌  ███    ███  
+//  ███        ███    ███   ▄███         ███▌  ███    ███  
+//  ███        ███    ███  ▀▀███ ████▄   ███▌  ███    ███  
+//  ███        ███    ███    ███    ███  ███   ███    ███  
+//  ███▌    ▄  ███    ███    ███    ███  ███   ███    ███  
+//  █████▄▄██   ▀██████▀     ████████▀   █▀     ▀█    █▀ 
 
 class _bcLogin {
 	private $wp_login_php;
@@ -928,9 +1030,18 @@ function bc_nav_attributes_filter($var) {
 function bc_add_scripts($hook) {
 	$screen = get_current_screen();
 
-	if (null === $screen || $screen->base !== 'toplevel_page_' . _PLUGIN_BASIC_CLEAN . '-menu') {
+	if ($screen == null) {
 		return;
 	}
+
+	if ((_BC['bc_position'] == 'yes') && ($screen->base !== 'toplevel_page_' . _PLUGIN_BASIC_CLEAN . '-menu')) {
+		return;
+	}
+
+	if ((_BC['bc_position'] !== 'yes') && ($screen->base !== 'settings_page_' . _PLUGIN_BASIC_CLEAN . '-menu')) {
+		return;
+	}
+
 	wp_enqueue_code_editor(['type' => 'application/x-httpd-php']);
 }
 
@@ -1111,6 +1222,141 @@ function latest_shortcode($atts = [], $content = null, $tag = '') {
 		$html .= '<div>No Posts&hellip;</div>';
 	}
 	return $html . '</div>';
+}
+
+// contact form shortcode
+
+function contact_shortcode($atts = [], $content = null, $tag = '') {
+	if (_BWP['form_active'] == 'yes') {
+		$html = '<form id="contact-form">';
+		$id = ($content) ? $content : 0;
+		$form = json_decode(_BC['bc_form_json'], true);
+		foreach ($form[$id] as $field => $data) {
+			$html .= '<div class="mb-3">';
+				$html .= '<label for="' . $field . '" class="form-label">' . $data['label'] . '</label>';
+				switch ($data['type']) {
+					case 'textarea': {
+						$html .= '<textarea id="' . $field . '" class="f form-control" name="' . $field . '" placeholder="' . $data['label'] . '"></textarea>';
+						break;
+					}
+					case 'checkbox': {
+						$html .= '<input id="' . $field . '" type="checkbox" class="form-check-input" name="' . $field . '">';
+						break;
+					}
+					default: {
+						$html .= '<input id="' . $field . '" type="' . $data['type'] . '" class="f form-control" name="' . $field . '" placeholder="' . $data['label'] . '">';
+					}
+				}
+			$html .= '</div>';
+		}
+		$html .= '<div class="mb-3">';
+			$html .= '<input type="hidden" name="action" value="contact_form_action">';
+			$html .= '<input type="hidden" name="form_id" value="' . $id . '">';
+			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
+			$html .= '<input id="contact-button" type="button" value="Send">';
+		$html .= '</div>';
+		$html .= '</form>';
+		$html .= '<div id="contact-msg"></div>';
+
+		$url = admin_url('admin-ajax.php');
+
+		$script = "<script>function boot(){
+			$('article').on('click','#contact-button',function(){
+				var f=$('#contact-form');
+				var m=$('#contact-msg');
+				m.text('...');
+				var ne=$('.f').filter(function(){
+					return this.value != '';
+				});
+				if(ne.length==0){
+					m.text('Please complete all the fields.');
+					return false;
+				}else{
+					$.ajax({
+						type:'POST',
+						url:'{$url}',
+						data:f.serialize(),
+						dataType:'json',
+						success:function(res){
+							if(res.status=='success'){
+								f[0].reset();
+							}
+							m.text(res.errmessage);
+						}
+					});
+				}
+			});
+		}</script>";
+
+		return $html . $script;
+	}
+	else {
+		return null;
+	}
+}
+
+// contact form post handler
+
+function contact_form_callback() {
+	if (!wp_verify_nonce($_POST['_acf_nonce'], $_POST['action'])) {
+		$error = 'verification error, try again.';
+	}
+	else {
+		$id = $_POST['form_id'];
+		$forms = json_decode(_BC['bc_form_json'], true);
+		$message = 'IP address: ' . $_SERVER['REMOTE_ADDR'] . "\n\n";
+
+		foreach ($forms[$id] as $field => $data) {
+			$sane = '';
+
+			switch ($field) {
+				case 'email': {
+					$sane = filter_var($_POST[$field], FILTER_SANITIZE_EMAIL);
+					break;
+				}
+				case 'message': {
+					$sane = stripslashes($_POST[$field]);
+					break;
+				}
+				default: {
+					$sane = filter_var($_POST[$field], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW);
+				}
+			}
+
+			$message .= $field . ': ';
+			if (strlen($sane) > 50) {
+				$message .= "\n\n" . $sane . "\n\n";
+			}
+			else {
+				$message .= $sane . "\n";
+			}
+		}
+
+		$subject = 'A messsage from ' . get_option('blogname');
+		$sendmsg = _BC['bc_form_success'];
+		$to = _BC['bc_form_email'];
+
+		$parsed = parse_url(site_url());
+
+		$header = 'From: ' . get_option('blogname') . ' <no-reply@' . $parsed['host'] . '>' . "\n";
+		$header .= 'Reply-To: ' . $email . "\n";
+
+		if (wp_mail($to, $subject, $message, $header)) {
+			$status = 'success';
+			$error = $sendmsg;
+		}
+		else {
+			$error = 'error(s)';
+		}
+	}
+
+	$json = [
+		'status' => $status,
+		'errmessage' => $error
+	];
+	
+	header('Content-Type: application/json');
+	die(json_encode($json));
 }
 
 // htaccess stuff
@@ -1299,6 +1545,12 @@ if (_BC['bc_feeds'] != 'default') {
 	add_action('do_feed_atom', $feed, 1);
 	add_action('do_feed_rss2_comments', $feed, 1);
 	add_action('do_feed_atom_comments', $feed, 1);
+}
+
+if (_BC['bc_form_active'] == 'yes') {
+	add_action('wp_ajax_contact_form_action', 'contact_form_callback');
+	add_action('wp_ajax_nopriv_contact_form_action', 'contact_form_callback');
+	add_shortcode('contact-form', 'contact_shortcode');
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);

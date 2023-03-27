@@ -5,30 +5,32 @@ jQuery(function($) {
 	const id = 'basic_clean';
 	const plugin = basic_clean;
 	const fields = [
-		'bc_cleaning',
+		'bc_ignore',
+		'bc_position',
+		'bc_gid',
+		'bc_indent',
+		'bc_logo',
+		'bc_feeds',
+		'bc_login',
+		'bc_path',
 		'bc_options',
 		'bc_nocat',
 		'bc_columns',
-		'bc_logo',
-		'bc_login',
-		'bc_path',
-		'bc_gid',
 		'bc_mimes',
 		'bc_views',
-		'bc_htaccess',
 		'bc_shortcodes',
-		'bc_indent',
-		'bc_feeds',
+		'bc_cleaning',
+		'bc_htaccess',
 		'bc_global',
-		'bc_blocks',
 		'bc_classic',
+		'bc_blocks',
 		'bc_head',
-		'bc_css',
-		'bc_js'
+		'bc_form_json',
+		'bc_form_success',
+		'bc_form_email',
+		'bc_form_active'
 	];
 	const editors = [
-		'bc_css',
-		'bc_js'
 	];
 	// let's go
 	var cm = [];

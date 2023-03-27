@@ -170,11 +170,14 @@ if (isset($_GET['file'])) {
 		$req = $_GET['file'];
 
 		$x = explode('.', $req);
-		$name = $x[0];
-		$extension = end($x);	
-		$ip = $_SERVER['REMOTE_ADDR'];
+		$extension = end($x);
+		array_pop($x);
+		$name = implode('.', $x);
 
-		if (!in_array($ip, _IGNORE_BASIC_CLEAN)) {
+		$ip = $_SERVER['REMOTE_ADDR'];
+		$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
+
+		if (!in_array($ip, $ips)) {
 			$post = get_page_by_title($name, 'OBJECT', 'attachment');
 			if ($post) {
 				$count = get_post_meta($post->ID, 'file_downloads', true);
