@@ -1011,7 +1011,9 @@ function bc_media_downloads_save($post, $attachment) {
 // login screen logo
 
 function bc_login_logo() {
-	echo '<style>h1 a { background-image:url(/uploads/' . _BC['bc_logo'] . ') !important; height: 100px !important; background-size: auto 100px !important; }</style>';
+	if (_BC['bc_logo'] != '') {
+		echo '<style>h1 a { background-image:url(/uploads/' . _BC['bc_logo'] . ') !important; height: 100px !important; background-size: auto 100px !important; }</style>';
+	}
 }
 
 // include file shortcode
