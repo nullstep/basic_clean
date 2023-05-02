@@ -10,3 +10,6 @@ some of those things are:
 - css field for pages/posts
 - page/post views
 - simple forms
+- og meta tags
+- cache-control header
+- auto xml sitemap
