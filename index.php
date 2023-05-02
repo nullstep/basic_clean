@@ -169,37 +169,65 @@ if (isset($_GET['file'])) {
 
 		$req = $_GET['file'];
 
-		$x = explode('.', $req);
-		$extension = end($x);
-		array_pop($x);
-		$name = implode('.', $x);
+		if ($req == 'sitemap' && (_BC['bc_sitemap'] == 'yes')) {
+			header('Content-Type: text/xml');
+			
+			echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+			echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">' . "\n";
 
-		$ip = $_SERVER['REMOTE_ADDR'];
-		$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
+				$posts = get_posts([
+					'numberposts' => -1,
+					'orderby' => 'post_date',
+					'order' => 'DESC',
+					'post_type' => ['post', 'page'],
+					'post_status' => 'publish',
+					'suppress_filters' => TRUE
+				]);
 
-		if (!in_array($ip, $ips)) {
-			$post = get_page_by_title($name, 'OBJECT', 'attachment');
-			if ($post) {
-				$count = get_post_meta($post->ID, 'file_downloads', true);
-				update_post_meta($post->ID, 'file_downloads', ($count != '') ? (int)$count + 1 : 1);
-			}
-		}
+				$site = get_site_url() . '/';
 
-		if (!isset($mimes[$extension])) {
-			$mime = 'application/octet-stream';
+				foreach ($posts as $p) {
+					echo '<url>' . "\n";
+						echo '<loc>' . $site . $p->post_name . '</loc>' . "\n";
+						echo '<lastmod>' . substr($p->post_modified, 0, 10) . '</lastmod>' . "\n";
+					echo '</url>' . "\n";
+				}			
+
+			echo '</urlset>' . "\n";
 		}
 		else {
-			$mime = (is_array($mimes[$extension])) ? $mimes[$extension][0] : $mimes[$extension];
-		}
+			$x = explode('.', $req);
+			$extension = end($x);
+			array_pop($x);
+			$name = implode('.', $x);
 
-		$len = strlen($req);
-		$it = new RecursiveDirectoryIterator(dirname(__FILE__, 3) . '/uploads');
+			$ip = $_SERVER['REMOTE_ADDR'];
+			$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
 
-		foreach (new RecursiveIteratorIterator($it) as $file) {
-			if (!substr_compare($file, $req, 0 - $len, $len)) {
-				header('Content-Type: ' . $mime);
-				echo file_get_contents($file);
-				die;
+			if (!in_array($ip, $ips)) {
+				$post = get_page_by_title($name, 'OBJECT', 'attachment');
+				if ($post) {
+					$count = get_post_meta($post->ID, 'file_downloads', true);
+					update_post_meta($post->ID, 'file_downloads', ($count != '') ? (int)$count + 1 : 1);
+				}
+			}
+
+			if (!isset($mimes[$extension])) {
+				$mime = 'application/octet-stream';
+			}
+			else {
+				$mime = (is_array($mimes[$extension])) ? $mimes[$extension][0] : $mimes[$extension];
+			}
+
+			$len = strlen($req);
+			$it = new RecursiveDirectoryIterator(dirname(__FILE__, 3) . '/uploads');
+
+			foreach (new RecursiveIteratorIterator($it) as $file) {
+				if (!substr_compare($file, $req, 0 - $len, $len)) {
+					header('Content-Type: ' . $mime);
+					echo file_get_contents($file);
+					die;
+				}
 			}
 		}
 	}
@@ -211,4 +239,4 @@ else {
 	header('Location: /404');
 }
 
-// EOF
+// eof

@@ -6,10 +6,10 @@
  * Description: make it better
  * Author: Scott A. Dixon
  * Author URI: https://xayrin.com
- * Version: 1.2.0
+ * Version: 1.2.1
 */
 
-defined('ABSPATH') or die('(-_-)');
+defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
 
 // defines
 
@@ -85,6 +85,18 @@ define('_ARGS_BASIC_CLEAN', [
 		'default' => 'yes'
 	],
 	'bc_shortcodes' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
+	'bc_cache' => [
+		'type' => 'string',
+		'default' => '86400'
+	],
+	'bc_sitemap' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
+	'bc_ogmeta' => [
 		'type' => 'string',
 		'default' => 'yes'
 	],
@@ -224,6 +236,18 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_shortcodes' => [
 				'label' => 'Shortcodes Active',
 				'type' => 'check'
+			],
+			'bc_cache' => [
+				'label' => 'Cache-Control (seconds)',
+				'type' => 'input'
+			],
+			'bc_sitemap' => [
+				'label' => 'XML Sitemap Active',
+				'type' => 'check'
+			],
+			'bc_ogmeta' => [
+				'label' => 'OpenGraph Meta Tags',
+				'type' => 'check'
 			]
 		]
 	],
@@ -252,7 +276,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'check'
 			],
 			'bc_head' => [
-				'label' => 'Tidy Head CSS',
+				'label' => 'Tidy Head CSS (NOT USED)',
 				'type' => 'check'
 			]
 		]
@@ -741,22 +765,23 @@ class _bcLogin {
 
 // pages/posts views count
 
-function bc_get_views($postID) {
+function bc_get_views($id) {
 	$count_key = 'post_views_count';
-	$count = get_post_meta($postID, $count_key, true);
+	$count = get_post_meta($id, $count_key, true);
 
 	if ($count == '') {
-		delete_post_meta($postID, $count_key);
-		add_post_meta($postID, $count_key, '0');
+		delete_post_meta($id, $count_key);
+		add_post_meta($id, $count_key, '0');
 		echo 'No';
 	}
-	echo $count . ' View' . (($count != 1)? 's' : '');
+	echo $count . ' View' . (($count != 1) ? 's' : '');
 }
 
 function bc_set_views($id) {
 	$ip = $_SERVER['REMOTE_ADDR'];
+	$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
 
-	if (!in_array($ip, _IGNORE_BASIC_CLEAN)) {
+	if (!in_array($ip, $ips)) {
 		$count_key = 'post_views_count';
 		$count = get_post_meta($id, $count_key, true);
 
@@ -965,7 +990,7 @@ function bc_remove_thumbnail_dimensions($html){
 	return $html;
 }
 
-// tidy head
+// tidy head - POSSIBLY NOT NEEDED ANY MORE
 
 function bc_start_wp_head_buffer() {
 	ob_start();
@@ -973,6 +998,9 @@ function bc_start_wp_head_buffer() {
 
 function bc_end_wp_head_buffer() {
 	$content = ob_get_clean();
+
+	echo $content;
+	$content = '';
 
 	if ($content == '') {
 		echo '';
@@ -1019,6 +1047,25 @@ function bc_end_wp_head_buffer() {
 	}
 }
 
+// add opengraph meta
+
+function bc_og_meta() {
+	$image = (has_post_thumbnail()) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id(get_queried_object()->ID))) : [''];
+
+	$tags = [
+		'locale' => get_locale(),
+		'title' => wp_title(':', FALSE, 'right') . get_option('blogname'),
+		'url' => get_the_permalink(),
+		'description' => get_the_excerpt(),
+		'image' => get_site_url() . '/uploads/' . end($image),
+		'type' => (is_single()) ? 'article' : 'website'
+	];
+
+	foreach ($tags as $p => $c) {
+		echo "\t" . '<meta property="og:' . $p . '" content="' . $c . '">' . "\n";
+	}
+}
+
 // clean nav items
 
 function bc_nav_attributes_filter($var) {
@@ -1052,7 +1099,7 @@ function bc_add_post_metadata() {
 
 	add_meta_box(
 		'post_meta_box',
-		'Column Class',
+		'CSS Class',
 		'bc_add_post_metadata_callback',
 		$screen,
 		'side',
@@ -1062,9 +1109,9 @@ function bc_add_post_metadata() {
 }
 
 function bc_add_post_metadata_callback($post) {
-	wp_nonce_field('column_class_save_data', 'column_class_nonce');
-	$value = get_post_meta($post->ID, 'column_class', true);
-	echo '<input class="components-text-control__input" style="margin-top:8px" type="text" name="column_class" value="' . esc_attr($value) . '" placeholder="Class...">';
+	wp_nonce_field('css_class_save_data', 'css_class_nonce');
+	$value = get_post_meta($post->ID, 'css_class', true);
+	echo '<input class="components-text-control__input" style="margin-top:8px" type="text" name="css_class" value="' . esc_attr($value) . '" placeholder="Class...">';
 }
 
 function bc_save_post_metadata($id) {
@@ -1087,15 +1134,15 @@ function bc_save_post_metadata($id) {
 
 		if (in_array($_POST['post_type'], ['page', 'post'])) {
 
-			if (!isset($_POST['column_class_nonce'])) {
+			if (!isset($_POST['css_class_nonce'])) {
 				return;
 			}
 
-			if (!wp_verify_nonce($_POST['column_class_nonce'], 'column_class_save_data')) {
+			if (!wp_verify_nonce($_POST['css_class_nonce'], 'css_class_save_data')) {
 				return;
 			}
-			$data = sanitize_text_field($_POST['column_class']);
-			update_post_meta($id, 'column_class', $data);
+			$data = sanitize_text_field($_POST['css_class']);
+			update_post_meta($id, 'css_class', $data);
 		}
 	}
 }
@@ -1180,6 +1227,7 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 
 function latest_shortcode($atts = [], $content = null, $tag = '') {
 	wp_reset_postdata();
+
 	$count = $content;
 	$none = true;
 	$num = 0;
@@ -1187,7 +1235,7 @@ function latest_shortcode($atts = [], $content = null, $tag = '') {
 	$cat = get_category_by_slug('uncategorised');
 
 	$query = new WP_Query([
-		'posts_per_page' => (($type == 2) ? $count : 99999),
+		'posts_per_page' => $count,
 		'category__not_in' => $cat->term_id
 	]);
 	$html = '<div class="post-group">';
@@ -1363,18 +1411,29 @@ function contact_form_callback() {
 
 function bc_output_htaccess($rules) {
 	$plugin = _PLUGIN_BASIC_CLEAN;
-	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n</IfModule>\n# END {$plugin}\n\n";
-	return $new_rules . $rules;
+	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
+
+	if (_BC['bc_sitemap'] == 'yes') {
+		$new_rules .= "RewriteRule ^sitemap\.xml$ /wp-content/plugins/{$plugin}/index.php?file=sitemap [L]\n";
+	}
+
+	return $new_rules . "</IfModule>\n# END {$plugin}\n\n" . $rules;
 }
 
 function bc_flush_htaccess() {
 	flush_rewrite_rules();
 }
 
+// cache control stuff
+
+function bc_set_cache_control() {
+	header('Cache-Control: max-age=' . _BC['bc_cache']);
+}
+
 // custom feeds stuff
 
 function disable_feed() {
-	wp_die(__('no feed available'));
+	die('no feed available');
 }
 
 function custom_feed() {
@@ -1484,6 +1543,18 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
+if (_BC['bc_cache'] != false) {
+	add_action('init', 'bc_set_cache_control');
+}
+
+if (_BC['bc_sitemap'] == 'yes') {
+	add_filter('wp_sitemaps_enabled', '__return_false');
+}
+
+if (_BC['bc_ogmeta'] == 'yes') {
+	add_filter('wp_head', 'bc_og_meta');
+}
+
 if (_BC['bc_nocat'] == 'yes') {
 	add_action('init', 'bc_no_category_base_permastruct');
 	add_action('created_category', 'bc_no_category_base_refresh_rules');
@@ -1555,7 +1626,7 @@ if (_BC['bc_form_active'] == 'yes') {
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 
-// boot theme
+// boot plugin
 
 add_action('init', function() {
 	if (is_admin()) {
