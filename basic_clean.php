@@ -1207,7 +1207,7 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 		]);
 
 		if ($child_pages) {
-			echo ($content) ? '<div class="' . $content . '">' : '';
+			echo ($content) ? '<div class="' . $content . '">' : '<div class="row>">';
 
 			foreach ($child_pages as $child_page) {
 				$page_id = $child_page->ID;
@@ -1217,7 +1217,7 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 				$page_css_class = get_post_meta($page_id, 'css_class', true);
 				?><div class="<?php echo $page_css_class; ?>"><?php echo do_shortcode($page_content); ?></div><?php
 			}
-			echo ($content) ? '</div>' : '';
+			echo '</div>';
 		}
 	}
 	return ob_get_clean();
