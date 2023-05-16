@@ -1207,7 +1207,7 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 		]);
 
 		if ($child_pages) {
-			echo ($content) ? '<div class="' . $content . '">' : '<div class="row>">';
+			echo ($content) ? '<div class="' . $content . '">' : '<div class="row">';
 
 			foreach ($child_pages as $child_page) {
 				$page_id = $child_page->ID;
