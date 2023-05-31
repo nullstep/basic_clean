@@ -129,10 +129,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_head' => [
-		'type' => 'string',
-		'default' => 'yes'
-	],
 
 	'bc_form_json' => [
 		'type' => 'string',
@@ -293,10 +289,6 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_blocks' => [
 				'label' => 'Remove Block Styles',
-				'type' => 'check'
-			],
-			'bc_head' => [
-				'label' => 'Tidy Head CSS (NOT USED)',
 				'type' => 'check'
 			]
 		]
@@ -1515,11 +1507,6 @@ if (_BC['bc_blocks'] == 'yes') {
 
 if (_BC['bc_classic'] == 'yes') {
 	add_action('wp_enqueue_scripts', 'bc_remove_classic_styles');
-}
-
-if (_BC['bc_head'] == 'yes') {
-	//add_action('wp_head','bc_start_wp_head_buffer', 1);
-	//add_action('wp_head','bc_end_wp_head_buffer', PHP_INT_MAX);
 }
 
 if (_BC['bc_options'] == 'yes') {

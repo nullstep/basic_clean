@@ -28,7 +28,6 @@ jQuery(function($) {
 		'bc_global',
 		'bc_classic',
 		'bc_blocks',
-		'bc_head',
 		'bc_random_text',
 		'bc_form_json',
 		'bc_form_success',
