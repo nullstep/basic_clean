@@ -2,8 +2,11 @@
 
 // basic_clean uploads handler
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> origin/main
 function get_post_by($title, $type) {
 	$array = get_posts([
 		'title' => $title,
