@@ -2,6 +2,16 @@
 
 // basic_clean uploads handler
 
+
+
+function get_post_by($title, $type) {
+	$array = get_posts([
+		'title' => $title,
+		'post_type' => $type
+	]);
+	return get_post($array[0]->ID);
+}
+
 if (isset($_GET['file'])) {
 	if ($_GET['file'] != '') {
 		require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
@@ -205,7 +215,7 @@ if (isset($_GET['file'])) {
 			$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
 
 			if (!in_array($ip, $ips)) {
-				$post = get_page_by_title($name, 'OBJECT', 'attachment');
+				$post = get_post_by($name, 'attachment');
 				if ($post) {
 					$count = get_post_meta($post->ID, 'file_downloads', true);
 					update_post_meta($post->ID, 'file_downloads', ($count != '') ? (int)$count + 1 : 1);
@@ -223,7 +233,7 @@ if (isset($_GET['file'])) {
 			$it = new RecursiveDirectoryIterator(dirname(__FILE__, 3) . '/uploads');
 
 			foreach (new RecursiveIteratorIterator($it) as $file) {
-				if (!substr_compare($file, $req, 0 - $len, $len)) {
+				if ($req == basename($file)) {
 					header('Content-Type: ' . $mime);
 					echo file_get_contents($file);
 					die;

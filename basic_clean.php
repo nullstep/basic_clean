@@ -25,7 +25,11 @@ define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
 //  ███         ███    ███  ███    ███  ▀▀███▀▀▀      
 //  ███    █▄   ███    ███  ███    ███    ███         
 //  ███    ███  ███    ███  ███    ███    ███         
-//  ████████▀    ▀██████▀    ▀█    █▀     ███         
+//  ████████▀    ▀██████▀    ▀█    █▀     ███
+
+// random text words
+
+define('_WORDS_BASIC_CLEAN', 'fermentum vel viverra taciti quisque nostra eleifend taciti interdum nulla aliquet aenean primis potenti luctus integer hendrerit varius blandit fringilla tortor tincidunt vivamus imperdiet mattis sagittis commodo tincidunt natoque odio neque quam malesuada dictumst a fermentum natoque arcu vehicula luctus est rutrum massa lectus tellus a pharetra hymenaeos cras quisque suscipit elementum massa metus pretium integer non in nunc porttitor semper aliquet suscipit nam vestibulum aptent nisi augue tempor eget risus imperdiet netus amet lacus vitae tempus primis faucibus eget eu nisl proin urna metus faucibus eros blandit dolor massa nibh ridiculus placerat primis sociosqu eu faucibus justo cum imperdiet vehicula urna ornare nulla sapien sollicitudin vulputate urna nisl consequat molestie etiam vehicula dolor egestas faucibus quisque magna parturient facilisi lobortis habitant porta inceptos parturient blandit fames bibendum dictumst vestibulum quis habitasse augue libero scelerisque semper convallis ante eleifend euismod mus elit bibendum litora lorem dignissim nascetur vel nam facilisis eleifend tortor nostra inceptos consequat nostra vivamus dictum gravida massa rhoncus inceptos primis pulvinar dis tempor vel dis id vel proin dictum curabitur id blandit augue suscipit id consequat condimentum vulputate risus duis dapibus neque ac arcu penatibus tempor fusce hendrerit cubilia taciti volutpat ipsum pede cubilia duis dictum ullamcorper non ultricies ipsum parturient ultrices gravida odio sollicitudin dui hymenaeos aliquam etiam quisque ullamcorper faucibus condimentum pulvinar elementum in sagittis vel a habitasse ante viverra vitae porta lacus purus nisl elementum eu quis ridiculus curae; nunc etiam maecenas magna ultricies integer eu netus ornare non velit neque condimentum dapibus curabitur quis dictum montes a torquent duis ante mus gravida semper et hac congue dignissim leo ligula nec per penatibus pede class torquent purus egestas scelerisque eros ligula phasellus ante felis sollicitudin donec felis litora vehicula conubia hendrerit iaculis sociis nam adipiscing vivamus suscipit pede netus risus senectus ridiculus posuere mollis');
 
 // basic_clean args
 
@@ -100,6 +104,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
+	'bc_latest_images' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
 
 	'bc_cleaning' => [
 		'type' => 'string',
@@ -154,6 +162,10 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_form_active' => [
 		'type' => 'string',
 		'default' => 'no'
+	],
+	'bc_random_text' => [
+		'type' => 'string',
+		'default' => _WORDS_BASIC_CLEAN
 	]
 ]);
 
@@ -185,6 +197,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_indent' => [
 				'label' => 'Tab Indents',
 				'type' => 'input'
+			],
+			'bc_random_text' => [
+				'label' => 'Text Generator Source',
+				'type' => 'text'
 			]
 		]
 	],
@@ -247,6 +263,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_ogmeta' => [
 				'label' => 'OpenGraph Meta Tags',
+				'type' => 'check'
+			],
+			'bc_latest_images' => [
+				'label' => 'Show Images in Latest Posts',
 				'type' => 'check'
 			]
 		]
@@ -763,6 +783,11 @@ class _bcLogin {
 //  ███    ███  ███    ███  ███   ▄███    ███    ███  
 //  ████████▀    ▀██████▀   ████████▀     ██████████
 
+function bc_debug() {
+	$debug = print_r(error_get_last(), true);
+	echo '<p>php-error: ' . esc_attr($debug) . '</p>';
+}
+
 // pages/posts views count
 
 function bc_get_views($id) {
@@ -922,44 +947,7 @@ function bc_handle_content($content) {
         $id = get_the_ID();
         bc_set_views($id);
     }
-
-	if ($content == '') {
-		return '';
-	}
-	else {
-		libxml_use_internal_errors(true);
-		$dom = new DOMDocument;
-		$dom->strictErrorChecking = false;
-		$dom->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'), LIBXML_HTML_NODEFDTD);
-
-		foreach ($dom->getElementsByTagName('img') as $img) {
-			$classes = explode(' ', $img->getAttribute('class'));
-
-			if (!in_array('ext', $classes)) {
-				$file = basename(parse_url($img->getAttribute('src'), PHP_URL_PATH));
-				$path = substr($img->getAttribute('src'), 0, (0 - strlen($file)));
-				$img->setAttribute('src', '/uploads/' . $file);
-				$set = str_replace($path, '/uploads/', $img->getAttribute('srcset'));
-				$img->setAttribute('srcset', $set);
-			}
-		}
-
-		foreach ($dom->getElementsByTagName('figure') as $fig) {
-			$fig->removeAttribute('class');
-		}
-
-		foreach ($dom->getElementsByTagName('pre') as $pre) {
-			$pre->removeAttribute('class');
-		}
-		$xpath = new DOMXPath($dom);
-
-		for ($els = $xpath->query('//comment()'), $i = $els->length - 1; $i >= 0; $i--) {
-			$els->item($i)->parentNode->removeChild($els->item($i));
-		}
-		$temp = str_replace('<html><body>', '', $dom->saveHTML());
-		$temp = str_replace('</body></html>', '', $temp);
-		return str_repeat("\t", (int)_BC['bc_indent']) . str_replace("\n", '', $temp);
-	}
+	return ($content == '') ? '' : str_repeat("\t", (int)_BC['bc_indent']) . str_replace(["\n", "\t"], '', preg_replace('/<!--(.*)-->/Uis', '', $content)) . "\n";
 }
 
 // remove crap
@@ -988,63 +976,6 @@ function bc_remove_block_styles() {
 function bc_remove_thumbnail_dimensions($html){
 	$html = preg_replace('/(width|height)=\"\d*\"\s/', '', $html);
 	return $html;
-}
-
-// tidy head - POSSIBLY NOT NEEDED ANY MORE
-
-function bc_start_wp_head_buffer() {
-	ob_start();
-}
-
-function bc_end_wp_head_buffer() {
-	$content = ob_get_clean();
-
-	echo $content;
-	$content = '';
-
-	if ($content == '') {
-		echo '';
-	}
-	else {
-		libxml_use_internal_errors(true);
-		$head = new DOMDocument;
-		$head->strictErrorChecking = false;
-		$head->loadHTML(mb_convert_encoding(
-			'<html><body>' . $content . '</body></html>', 'HTML-ENTITIES', 'UTF-8'
-		), LIBXML_HTML_NODEFDTD | LIBXML_NOBLANKS);
-
-		foreach ($head->getElementsByTagName('script') as $script) {
-			$script->removeAttribute('id');
-			$script->removeAttribute('type');
-		}
-
-		foreach ($head->getElementsByTagName('link') as $link) {
-			$link->removeAttribute('id');
-			$link->removeAttribute('type');
-		}
-
-		$css = '';
-
-		$styles = $head->getElementsByTagName('style');
-
-		for ($i = $styles->length; --$i >= 0;) {
-			$tag = $styles->item($i);
-			$css .= trim($tag->nodeValue);
-			$tag->parentNode->removeChild($tag);
-		}
-
-		if ($css) {
-			$style = $head->createElement('style', $css);
-			$head->appendChild($style);
-		}
-
-		$html = $head->saveHTML();
-		echo (trim($html) == '') ? '' : "\t" . str_replace(
-			["\n", '<html><body>', '</body></html>', '</title>'],
-			['', '', '', "</title>\n\t"],
-			$head->saveHTML()
-		) . "\n";
-	}
 }
 
 // add opengraph meta
@@ -1207,7 +1138,7 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 		]);
 
 		if ($child_pages) {
-			echo ($content) ? '<div class="' . $content . '">' : '';
+			echo ($content) ? '<div class="' . $content . '">' : '<div class="row">';
 
 			foreach ($child_pages as $child_page) {
 				$page_id = $child_page->ID;
@@ -1215,17 +1146,67 @@ function bc_children_shortcode($atts = [], $content = null, $tag = '') {
 				$page_title = $child_page->post_title;
 				$page_content = $child_page->post_content;
 				$page_css_class = get_post_meta($page_id, 'css_class', true);
-				?><div class="<?php echo $page_css_class; ?>"><?php echo do_shortcode($page_content); ?></div><?php
+				echo '<div class="' . $page_css_class . '">' . do_shortcode($page_content) . '</div>';
 			}
-			echo ($content) ? '</div>' : '';
+			echo '</div>';
 		}
 	}
 	return ob_get_clean();
 }
 
+// show page shortcode
+
+function bc_page_shortcode($atts = [], $content = null, $tag = '') {
+	$html = '';
+
+	if ($content) {
+		$page = get_page_by_path($content);
+
+		if ($page) {
+					$html .= '</article>';
+				$html .= '</section>';
+			$html .= '</div>';
+			$html .= '<div id="' . $page->post_name . '-section">';
+				$html .= '<div class="' . ((class_exists('BWP')) ? _BWP['container_class'] : 'container') . '">';
+					$html .= '<div class="row">';
+						$html .= '<div class="' . get_post_meta($page->ID, 'css_class', true) . '">' . $page->post_content . '</div>';
+					$html .= '</div>';
+				$html .= '</div>';
+			$html .= '</div>';
+			$html .= '<div class="' . ((class_exists('BWP')) ? _BWP['container_class'] : 'container') . '">';
+				$html .= '<section class="row">';
+					$html .= '<article class="col-xs-12">';
+		}
+	}
+
+	return $html;
+}
+
+// random text shortcode
+
+function bc_random_shortcode($atts = [], $content = null, $tag = '') {
+	$count = $content;
+	$words = explode(' ', _BC['bc_random_text']);
+	$text = '';
+
+	for ($p = 0; $p < $count; $p++) {
+		$text .= '<p>';
+		for ($s = 0; $s < rand(5, 10); $s++) {
+			for ($w = 0; $w < rand(10, 20); $w++) {
+				$word = $words[rand(0, count($words) - 1)];
+				$text .= ($w == 0) ? ucwords($word) : $word;
+				$text .= (rand(0, 100) < 10) ? ', ' : ' ';
+			}
+			$text = rtrim($text) . '. ';
+		}
+		$text .= '</p>';
+	}
+	return $text;
+}
+
 // latest posts shortcode
 
-function latest_shortcode($atts = [], $content = null, $tag = '') {
+function bc_latest_shortcode($atts = [], $content = null, $tag = '') {
 	wp_reset_postdata();
 
 	$count = $content;
@@ -1238,7 +1219,7 @@ function latest_shortcode($atts = [], $content = null, $tag = '') {
 		'posts_per_page' => $count,
 		'category__not_in' => $cat->term_id
 	]);
-	$html = '<div class="post-group">';
+	$html = '<div id="latest-posts">';
 
 	while ($query -> have_posts()) : $query -> the_post();
 		if ((get_the_ID() != $post_id)) {
@@ -1246,19 +1227,21 @@ function latest_shortcode($atts = [], $content = null, $tag = '') {
 
 			if (has_post_thumbnail()) {
 				$array = explode('/', wp_get_attachment_image_src(get_post_thumbnail_id(), 'post-thumbnail')[0]);
-				$bg = ' style="background-image:url(' . '/uploads/' . end($array) . ')"';
+				$bg = end($array);
 			}
 
 			if ($num <= $count) {
-				$html .= '<div class="post-outer-box my-3">';
-					$html .= '<div class="post-inner-box">';
-						$html .= '<h3 class="post-title"' . $bg . '>';
-							$html .= '<span>';
-								$html .= '<a class="post-link" href="' . get_permalink() . '" title="' . get_the_title() . '">' . get_the_title() . '</a>';
-							$html .= '</span>';
-						$html .= '</h3>';
+				$html .= '<div class="post-box my-3">';
+					$html .= '<a class="post-link" href="' . get_permalink() . '" title="' . get_the_title() . '">';
+						$html .= '<h4 class="post-title">' . get_the_title() . '</h4>';
 						$html .= '<p class="post-date">' . get_the_time(get_option('date_format')) . ' - ' . get_the_time() . '</p>';
-					$html .= '</div>';
+
+						if ($bg && _BC['bc_latest_images'] == 'yes') {
+							$html .= '<div class="post-img" style="background-image:url(/uploads/' . $bg . ')"></div>';
+						}
+
+						$html .= '<p class="post-excerpt">' . get_the_excerpt() . '</p>';
+					$html .= '</a>';
 				$html .= '</div>';
 				$none = false;
 				$num++;
@@ -1275,7 +1258,7 @@ function latest_shortcode($atts = [], $content = null, $tag = '') {
 // contact form shortcode
 
 function contact_shortcode($atts = [], $content = null, $tag = '') {
-	if (_BWP['form_active'] == 'yes') {
+	if (_BC['bc_form_active'] == 'yes') {
 		$html = '<form id="contact-form">';
 		$id = ($content) ? $content : 0;
 		$form = json_decode(_BC['bc_form_json'], true);
@@ -1535,8 +1518,8 @@ if (_BC['bc_classic'] == 'yes') {
 }
 
 if (_BC['bc_head'] == 'yes') {
-	add_action('wp_head','bc_start_wp_head_buffer', 1);
-	add_action('wp_head','bc_end_wp_head_buffer', PHP_INT_MAX);
+	//add_action('wp_head','bc_start_wp_head_buffer', 1);
+	//add_action('wp_head','bc_end_wp_head_buffer', PHP_INT_MAX);
 }
 
 if (_BC['bc_options'] == 'yes') {
@@ -1604,7 +1587,9 @@ if (_BC['bc_shortcodes'] == 'yes') {
 	add_shortcode('inc', 'bc_inc_shortcode');
 	add_shortcode('video', 'bc_video_shortcode');
 	add_shortcode('children', 'bc_children_shortcode');
-	add_shortcode('latest', 'latest_shortcode');
+	add_shortcode('page', 'bc_page_shortcode');
+	add_shortcode('random', 'bc_random_shortcode');
+	add_shortcode('latest', 'bc_latest_shortcode');
 }
 
 if (_BC['bc_feeds'] != 'default') {
