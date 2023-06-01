@@ -29,7 +29,8 @@ define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
 
 // random text words
 
-define('_WORDS_BASIC_CLEAN', 'fermentum vel viverra taciti quisque nostra eleifend taciti interdum nulla aliquet aenean primis potenti luctus integer hendrerit varius blandit fringilla tortor tincidunt vivamus imperdiet mattis sagittis commodo tincidunt natoque odio neque quam malesuada dictumst a fermentum natoque arcu vehicula luctus est rutrum massa lectus tellus a pharetra hymenaeos cras quisque suscipit elementum massa metus pretium integer non in nunc porttitor semper aliquet suscipit nam vestibulum aptent nisi augue tempor eget risus imperdiet netus amet lacus vitae tempus primis faucibus eget eu nisl proin urna metus faucibus eros blandit dolor massa nibh ridiculus placerat primis sociosqu eu faucibus justo cum imperdiet vehicula urna ornare nulla sapien sollicitudin vulputate urna nisl consequat molestie etiam vehicula dolor egestas faucibus quisque magna parturient facilisi lobortis habitant porta inceptos parturient blandit fames bibendum dictumst vestibulum quis habitasse augue libero scelerisque semper convallis ante eleifend euismod mus elit bibendum litora lorem dignissim nascetur vel nam facilisis eleifend tortor nostra inceptos consequat nostra vivamus dictum gravida massa rhoncus inceptos primis pulvinar dis tempor vel dis id vel proin dictum curabitur id blandit augue suscipit id consequat condimentum vulputate risus duis dapibus neque ac arcu penatibus tempor fusce hendrerit cubilia taciti volutpat ipsum pede cubilia duis dictum ullamcorper non ultricies ipsum parturient ultrices gravida odio sollicitudin dui hymenaeos aliquam etiam quisque ullamcorper faucibus condimentum pulvinar elementum in sagittis vel a habitasse ante viverra vitae porta lacus purus nisl elementum eu quis ridiculus curae; nunc etiam maecenas magna ultricies integer eu netus ornare non velit neque condimentum dapibus curabitur quis dictum montes a torquent duis ante mus gravida semper et hac congue dignissim leo ligula nec per penatibus pede class torquent purus egestas scelerisque eros ligula phasellus ante felis sollicitudin donec felis litora vehicula conubia hendrerit iaculis sociis nam adipiscing vivamus suscipit pede netus risus senectus ridiculus posuere mollis');
+define('_WORDS_BASIC_CLEAN', 'lorem ipsum dolor sit amet fermentum vel viverra taciti quisque nostra eleifend interdum nulla aliquet aenean primis potenti luctus integer hendrerit varius blandit fringilla tortor tincidunt vivamus ad imperdiet mattis sagittis commodo natoque odio neque quam malesuada dictumst a arcu vehicula est rutrum massa lectus tellus pharetra hymenaeos cras suscipit elementum metus pretium non in nunc porttitor semper nam vestibulum aptent nisi augue tempor eget risus netus lacus vitae tempus faucibus eu nisl proin urna eros nibh ridiculus astra placerat sociosqu justo cum ornare sapien sollicitudin vulputate consequat molestie etiam egestas magna parturient facilisi lobortis habitant porta inceptos fames bibendum quis habitasse libero scelerisque convallis ante euismod mus elit litora dignissim nascetur facilisis dictum gravida rhoncus pulvinar dis id curabitur condimentum duis dapibus ac penatibus fusce cubilia volutpat pede ullamcorper ultricies ultrices dui aliquam purus curae maecenas velit montes torquent et hac congue leo ligula nec per class phasellus felis donec conubia iaculis sociis adipiscing senectus posuere mollis
+');
 
 // basic_clean args
 
@@ -1174,22 +1175,29 @@ function bc_page_shortcode($atts = [], $content = null, $tag = '') {
 	return $html;
 }
 
-// random text shortcode
+// lorem ipsum shortcode
 
-function bc_random_shortcode($atts = [], $content = null, $tag = '') {
+function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 	$count = $content;
 	$words = explode(' ', _BC['bc_random_text']);
 	$text = '';
+	$first = 1;
 
 	for ($p = 0; $p < $count; $p++) {
 		$text .= '<p>';
+		if ($p == 0) {
+			for ($l = 0; $l < 5; $l++) {
+				$text .= (($l == 0) ? ucwords($words[$l]) : $words[$l]) . ' ';
+			}
+		}
 		for ($s = 0; $s < rand(5, 10); $s++) {
 			for ($w = 0; $w < rand(10, 20); $w++) {
 				$word = $words[rand(0, count($words) - 1)];
-				$text .= ($w == 0) ? ucwords($word) : $word;
+				$text .= (!$first && $w == 0) ? ucwords($word) : $word;
 				$text .= (rand(0, 100) < 10) ? ', ' : ' ';
 			}
-			$text = rtrim($text) . '. ';
+			$text = rtrim($text, ', ') . '. ';
+			$first = 0;
 		}
 		$text .= '</p>';
 	}
@@ -1575,7 +1583,7 @@ if (_BC['bc_shortcodes'] == 'yes') {
 	add_shortcode('video', 'bc_video_shortcode');
 	add_shortcode('children', 'bc_children_shortcode');
 	add_shortcode('page', 'bc_page_shortcode');
-	add_shortcode('random', 'bc_random_shortcode');
+	add_shortcode('lorem', 'bc_lorem_shortcode');
 	add_shortcode('latest', 'bc_latest_shortcode');
 }
 
