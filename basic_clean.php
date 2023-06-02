@@ -817,14 +817,15 @@ function bc_set_views($id) {
 
 function bc_posts_column_views($defaults) {
 	if (get_post_type(get_the_ID()) == 'post') {
+		unset($defaults['date']);
 		$defaults['post_views'] = 'Views';
+		$defaults['date'] = 'Date';
 	}
 	return $defaults;
 }
 
 function bc_posts_custom_column_views($column_name, $id) {
 	if (get_post_type(get_the_ID()) == 'post') {
-
 		if ($column_name === 'post_views') {
 			bc_get_views(get_the_ID());
 		}
@@ -832,13 +833,43 @@ function bc_posts_custom_column_views($column_name, $id) {
 }
 
 function bc_pages_column_views($defaults) {
+	unset($defaults['date']);
 	$defaults['page_views'] = 'Views';
+	$defaults['date'] = 'Date';
 	return $defaults;
 }
 
 function bc_pages_custom_column_views($column_name, $id) {
 	if ($column_name === 'page_views') {
 		bc_get_views(get_the_ID());
+	}
+}
+
+function bc_set_posts_sortable_columns($columns) {
+	$columns['post_views'] = 'post_views';
+	return $columns;
+}
+
+function bc_set_pages_sortable_columns($columns) {
+	$columns['page_views'] = 'page_views';
+	return $columns;
+}
+
+function bc_sort_custom_column_query($query) {
+	$orderby = $query->get('orderby');
+	if (in_array($orderby, ['post_views', 'page_views'])) {
+		$meta_query = [
+			'relation' => 'OR',
+			[
+				'key' => $orderby . '_count',
+				'compare' => 'NOT EXISTS'
+			],
+			[
+				'key' => $orderby . '_count'
+			]
+		];
+		$query->set('meta_query', $meta_query);
+		$query->set('orderby', 'meta_value');
 	}
 }
 
@@ -937,9 +968,9 @@ function bc_add_mime_types($mimes) {
 
 function bc_handle_content($content) {
 	if (is_single()) {
-        $id = get_the_ID();
-        bc_set_views($id);
-    }
+		$id = get_the_ID();
+		bc_set_views($id);
+	}
 	return ($content == '') ? '' : str_repeat("\t", (int)_BC['bc_indent']) . str_replace(["\n", "\t"], '', preg_replace('/<!--(.*)-->/Uis', '', $content)) . "\n";
 }
 
@@ -1569,6 +1600,9 @@ if (_BC['bc_views'] == 'yes') {
 	add_action('manage_pages_custom_column', 'bc_pages_custom_column_views', 5, 2);
 	add_filter('manage_posts_columns', 'bc_posts_column_views');
 	add_filter('manage_pages_columns', 'bc_pages_column_views');
+	add_action('pre_get_posts', 'bc_sort_custom_column_query');
+	add_filter('manage_edit-post_sortable_columns', 'bc_set_posts_sortable_columns');
+	add_filter('manage_edit-page_sortable_columns', 'bc_set_pages_sortable_columns');
 	add_filter('attachment_fields_to_edit', 'bc_media_downloads', 10, 2);
 	add_filter('attachment_fields_to_save', 'bc_media_downloads_save', 10, 2);
 }
