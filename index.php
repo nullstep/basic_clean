@@ -174,7 +174,12 @@ if (isset($_GET['file'])) {
 			'json' => [
 				'application/json',
 				'text/json'
-			]
+			],
+			'otf' => 'application/octet-stream',
+			'sfnt' => 'application/octet-stream',
+			'ttf' => 'application/octet-stream',
+			'woff' => 'application/octet-stream',
+			'woff2' => 'application/octet-stream'
 		];
 
 		$req = $_GET['file'];

@@ -961,6 +961,10 @@ function bc_no_category_base_request($query_vars) {
 function bc_add_mime_types($mimes) {
 	$mimes['svg'] = 'image/svg+xml';
 	$mimes['ico'] = 'image/vnd.microsoft.icon';
+	$mimes['otf'] = 'application/octet-stream';
+	$mimes['ttf'] = 'application/octet-stream';
+	$mimes['woff'] = 'application/octet-stream';
+	$mimes['woff2'] = 'application/octet-stream';
 	return $mimes;
 }
 
