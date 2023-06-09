@@ -1626,12 +1626,12 @@ if (_BC['bc_htaccess'] == 'yes') {
 }
 
 if (_BC['bc_shortcodes'] == 'yes') {
-	add_shortcode('inc', 'bc_inc_shortcode');
-	add_shortcode('video', 'bc_video_shortcode');
 	add_shortcode('children', 'bc_children_shortcode');
-	add_shortcode('page', 'bc_page_shortcode');
-	add_shortcode('lorem', 'bc_lorem_shortcode');
+	add_shortcode('inc', 'bc_inc_shortcode');
 	add_shortcode('latest', 'bc_latest_shortcode');
+	add_shortcode('lorem', 'bc_lorem_shortcode');
+	add_shortcode('page', 'bc_page_shortcode');
+	add_shortcode('video', 'bc_video_shortcode');
 }
 
 if (_BC['bc_feeds'] != 'default') {
