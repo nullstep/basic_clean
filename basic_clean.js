@@ -30,8 +30,6 @@ jQuery(function($) {
 		'bc_blocks',
 		'bc_random_text',
 		'bc_form_json',
-		'bc_form_success',
-		'bc_form_email',
 		'bc_form_active'
 	];
 	const editors = [

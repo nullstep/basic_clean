@@ -2,10 +2,10 @@
 
 /*
  * Plugin Name: basic_clean
- * Plugin URI: https://xayrin.com/wp-plugins
+ * Plugin URI: https://localhost/plugins
  * Description: make it better
- * Author: Scott A. Dixon
- * Author URI: https://xayrin.com
+ * Author: nullstep
+ * Author URI: https://localhost
  * Version: 1.2.1
 */
 
@@ -30,6 +30,12 @@ define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
 // random text words
 
 define('_WORDS_BASIC_CLEAN', 'lorem ipsum dolor sit amet fermentum vel viverra taciti quisque nostra eleifend interdum nulla aliquet aenean primis potenti luctus integer hendrerit varius blandit fringilla tortor tincidunt vivamus ad imperdiet mattis sagittis commodo natoque odio neque quam malesuada dictumst a arcu vehicula est rutrum massa lectus tellus pharetra hymenaeos cras suscipit elementum metus pretium non in nunc porttitor semper nam vestibulum aptent nisi augue tempor eget risus netus lacus vitae tempus faucibus eu nisl proin urna eros nibh ridiculus astra placerat sociosqu justo cum ornare sapien sollicitudin vulputate consequat molestie etiam egestas magna parturient facilisi lobortis habitant porta inceptos fames bibendum quis habitasse libero scelerisque convallis ante euismod mus elit litora dignissim nascetur facilisis dictum gravida rhoncus pulvinar dis id curabitur condimentum duis dapibus ac penatibus fusce cubilia volutpat pede ullamcorper ultricies ultrices dui aliquam purus curae maecenas velit montes torquent et hac congue leo ligula nec per class phasellus felis donec conubia iaculis sociis adipiscing senectus posuere mollis
+');
+
+// default form json
+
+define('_FORM_BASIC_CLEAN', '
+	{"default":{"send_to":["' . get_option('admin_email') . '"],"success_msg":"Thanks","rows":[{"cols":[{"class":"col-md-6","fields":[{"label":"First Name","type":"input","required":"yes"},{"label":"Last Name","type":"input","required":"no"}]},{"class":"col-md-6","fields":[{"label":"Email","type":"input","required":"yes"},{"label":"Telephone","type":"input","required":"no"}]}]},{"cols":[{"class":"col-md-12","fields":[{"label":"Message","type":"textarea","required":"yes"}]}]}]}}
 ');
 
 // basic_clean args
@@ -133,33 +139,16 @@ define('_ARGS_BASIC_CLEAN', [
 
 	'bc_form_json' => [
 		'type' => 'string',
-		'default' => json_encode([[
-			'name' => [
-				'label' => 'Name',
-				'type' => 'text'
-			],
-			'email' => [
-				'label' => 'Email',
-				'type' => 'email'
-			],
-			'message' => [
-				'label' => 'Message',
-				'type' => 'textarea'
-			]
-		]])
-	],
-	'bc_form_success' => [
-		'type' => 'string',
-		'default' => 'Thanks for the message. We will respond as soon as possible.'
-	],
-	'bc_form_email' => [
-		'type' => 'string',
-		'default' => get_option('admin_email')
+		'default' => json_encode(
+			json_decode(trim(_FORM_BASIC_CLEAN)),
+			JSON_PRETTY_PRINT
+		)
 	],
 	'bc_form_active' => [
 		'type' => 'string',
 		'default' => 'no'
 	],
+
 	'bc_random_text' => [
 		'type' => 'string',
 		'default' => _WORDS_BASIC_CLEAN
@@ -171,22 +160,16 @@ define('_ARGS_BASIC_CLEAN', [
 define('_ADMIN_BASIC_CLEAN', [
 	'options' => [
 		'label' => 'Options',
-		'columns' => 4,
+		'columns' => 2,
 		'fields' => [
 			'bc_ignore' => [
 				'label' => 'IP Addresses to Ignore for Page View Count',
 				'type' => 'text'
 			],
-			'bc_position' => [
-				'label' => 'Show in Admin Menu',
-				'type' => 'check'
-			]
-		]
-	],
-	'extras' => [
-		'label' => 'Extras',
-		'columns' => 4,
-		'fields' => [
+			'bc_random_text' => [
+				'label' => 'Text Generator Source',
+				'type' => 'text'
+			],
 			'bc_gid' => [
 				'label' => 'Google Analytics ID',
 				'type' => 'input'
@@ -195,9 +178,9 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Tab Indents',
 				'type' => 'input'
 			],
-			'bc_random_text' => [
-				'label' => 'Text Generator Source',
-				'type' => 'text'
+			'bc_position' => [
+				'label' => 'Show in Admin Menu',
+				'type' => 'check'
 			]
 		]
 	],
@@ -296,19 +279,11 @@ define('_ADMIN_BASIC_CLEAN', [
 	],
 	'forms' => [
 		'label' => 'Forms',
-		'columns' => 4,
+		'columns' => 1,
 		'fields' => [
 			'bc_form_json' => [
-				'label' => 'Forms Config',
+				'label' => 'Forms JSON Config',
 				'type' => 'code'
-			],
-			'bc_form_success' => [
-				'label' => 'Forms Thanks Message',
-				'type' => 'text'
-			],
-			'bc_form_email' => [
-				'label' => 'Forms Email',
-				'type' => 'input'
 			],
 			'bc_form_active' => [
 				'label' => 'Forms Active',
@@ -438,6 +413,14 @@ class _bcSettings {
 		foreach ($settings as $i => $setting) {
 			if (!array_key_exists($i, $defaults)) {
 				unset($settings[$i]);
+			}
+			if ($i == 'bc_form_json') {
+				if ($setting == 'reset') {
+					$settings['bc_form_json'] = json_encode(
+						json_decode(trim(_FORM_BASIC_CLEAN)),
+						JSON_PRETTY_PRINT
+					);
+				}
 			}
 		}
 		update_option(self::$option_key, $settings);
@@ -1225,7 +1208,7 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 				$text .= (($l == 0) ? ucwords($words[$l]) : $words[$l]) . ' ';
 			}
 		}
-		for ($s = 0; $s < rand(5, 10); $s++) {
+		for ($s = 0; $s < rand(4, 8); $s++) {
 			for ($w = 0; $w < rand(10, 20); $w++) {
 				$word = $words[rand(0, count($words) - 1)];
 				$text .= (!$first && $w == 0) ? ucwords($word) : $word;
@@ -1292,78 +1275,104 @@ function bc_latest_shortcode($atts = [], $content = null, $tag = '') {
 
 // contact form shortcode
 
-function contact_shortcode($atts = [], $content = null, $tag = '') {
+function bc_form_shortcode($atts = [], $content = null, $tag = '') {
+	$html = '';
+
 	if (_BC['bc_form_active'] == 'yes') {
-		$html = '<form id="contact-form">';
-		$id = ($content) ? $content : 0;
-		$form = json_decode(_BC['bc_form_json'], true);
-		foreach ($form[$id] as $field => $data) {
-			$html .= '<div class="mb-3">';
-				$html .= '<label for="' . $field . '" class="form-label">' . $data['label'] . '</label>';
-				switch ($data['type']) {
-					case 'textarea': {
-						$html .= '<textarea id="' . $field . '" class="f form-control" name="' . $field . '" placeholder="' . $data['label'] . '"></textarea>';
-						break;
+		$html .= '<form id="contact-form">';
+		$forms = json_decode(_BC['bc_form_json'], true);
+		$index = ($content) ? $content : 0;
+		$m = false;
+
+		if (array_key_exists($index, $forms)) {
+			$form = $forms[$index];
+
+			foreach ($form['rows'] as $row) {
+				$html .= '<div class="row">';
+
+				foreach ($row['cols'] as $col) {
+					$html .= '<div class="' . $col['class'] . '">';
+
+					foreach ($col['fields'] as $field) {
+						$name = str_replace(' ', '_', strtolower($field['label']));
+						$req = ($field['required'] == 'yes') ? 'f ' : '';
+						$html .= '<div class="mb-3">';
+						$html .= '<label for="' . $name . '" class="form-label">' . $field['label'] . (($req) ? ' *' : '') . '</label>';
+
+						switch ($field['type']) {
+							case 'textarea': {
+								$html .= '<textarea id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
+								break;
+							}
+							case 'checkbox': {
+								$html .= '<input id="' . $name . '" type="checkbox" class="' . $req . 'form-check-input" name="' . $name . '">';
+								break;
+							}
+							default: {
+								$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '">';
+							}
+						}
+
+						if ($req) {
+							$m = true;
+						}
+						$html .= '</div>';
 					}
-					case 'checkbox': {
-						$html .= '<input id="' . $field . '" type="checkbox" class="form-check-input" name="' . $field . '">';
-						break;
-					}
-					default: {
-						$html .= '<input id="' . $field . '" type="' . $data['type'] . '" class="f form-control" name="' . $field . '" placeholder="' . $data['label'] . '">';
-					}
+					$html .= '</div>';
 				}
-			$html .= '</div>';
-		}
-		$html .= '<div class="mb-3">';
+				$html .= '</div>';
+			}
+			$html .= '<div class="mb-3">';
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $id . '">';
 			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
 			$html .= '<input id="contact-button" type="button" value="Send">';
-		$html .= '</div>';
-		$html .= '</form>';
-		$html .= '<div id="contact-msg"></div>';
+			$html .= '</div>';
 
-		$url = admin_url('admin-ajax.php');
+			if ($m) {
+				$html .= '<p class="req-field">* indicates a required field</p>';
+			}
+			$html .= '</form>';
+			$html .= '<div id="contact-msg"></div>';
 
-		$script = "<script>function boot(){
-			$('article').on('click','#contact-button',function(){
-				var f=$('#contact-form');
-				var m=$('#contact-msg');
-				m.text('...');
-				var ne=$('.f').filter(function(){
-					return this.value != '';
-				});
-				if(ne.length==0){
-					m.text('Please complete all the fields.');
-					return false;
-				}else{
-					$.ajax({
-						type:'POST',
-						url:'{$url}',
-						data:f.serialize(),
-						dataType:'json',
-						success:function(res){
-							if(res.status=='success'){
-								f[0].reset();
-							}
-							m.text(res.errmessage);
-						}
+			$url = admin_url('admin-ajax.php');
+
+			$html .= "<script>$(function(){
+				$('article').on('click','#contact-button',function(){
+					var f=$('#contact-form');
+					var m=$('#contact-msg');
+					m.text('...');
+					var ne=$('.f').filter(function(){
+						return this.value != '';
 					});
-				}
-			});
-		}</script>";
+					if(ne.length==0){
+						m.text('Please complete all the required fields.');
+						return false;
+					}else{
+						$.ajax({
+							type:'POST',
+							url:'{$url}',
+							data:f.serialize(),
+							dataType:'json',
+							success:function(res){
+								if(res.status=='success'){
+									f[0].reset();
+								}
+								m.text(res.errmessage);
+							}
+						});
+					}
+				});
+			});</script>";
+		}
+	}
 
-		return $html . $script;
-	}
-	else {
-		return null;
-	}
+	return $html;
 }
 
 // contact form post handler
 
-function contact_form_callback() {
+function bc_contact_form_callback() {
 	if (!wp_verify_nonce($_POST['_acf_nonce'], $_POST['action'])) {
 		$error = 'verification error, try again.';
 	}
@@ -1637,9 +1646,9 @@ if (_BC['bc_feeds'] != 'default') {
 }
 
 if (_BC['bc_form_active'] == 'yes') {
-	add_action('wp_ajax_contact_form_action', 'contact_form_callback');
-	add_action('wp_ajax_nopriv_contact_form_action', 'contact_form_callback');
-	add_shortcode('contact-form', 'contact_shortcode');
+	add_action('wp_ajax_contact_form_action', 'bc_contact_form_callback');
+	add_action('wp_ajax_nopriv_contact_form_action', 'bc_contact_form_callback');
+	add_shortcode('form', 'bc_form_shortcode');
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
