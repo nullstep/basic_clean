@@ -3,23 +3,22 @@ a plugin to clean up WP and add a few useful things
 
 some of those things are:
 
-- shortened upload path
+- shortened uploads path
 - custom login logo
 - custom login url
-- child page shortcode
-- css field for pages/posts
-- page/post views
-- forms
-- og meta tags
+- page/post views stats
+- media downloads stats
+- forms via json config
+- opengraph meta tags
 - cache-control header
 - auto xml sitemap
+- remove unneeded styles/scripts/tags
 
 shortcodes available:
 
-[children] - show child pages
-[form]name[/form] - use a form
-[inc]file[/inc] - include a file
-[latest]x[/latest] - show x latest posts
 [lorem]x[/lorem] - show x paragraphs of generated text
-[page]slug[/page] - show a page
-[video]url[/video] - show a video
+[form]name[/form] - embed a form defined in the json config
+
+if you wreck the forms json, type the word "reset" without quotes on its own into the form config field and click save to reset to the default/demo json.
+
+eof

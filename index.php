@@ -1,8 +1,6 @@
 <?php
 
-// basic_clean uploads handler
-
-
+// basic_clean sitemap/file handler
 
 function get_post_by($title, $type) {
 	$array = get_posts([
