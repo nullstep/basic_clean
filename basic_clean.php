@@ -87,6 +87,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
+	'bc_unfiltered' => [
+		'type' => 'string',
+		'default' => ''
+	],
 	'bc_views' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -214,7 +218,11 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'check'
 			],
 			'bc_mimes' => [
-				'label' => 'Allow SVG/ICO Uploads',
+				'label' => 'Allow Additional Upload Types',
+				'type' => 'check'
+			],
+			'bc_unfiltered' => [
+				'label' => 'Allow Unfiltered Uploads',
 				'type' => 'check'
 			],
 			'bc_views' => [
@@ -948,12 +956,20 @@ function bc_no_category_base_request($query_vars) {
 
 function bc_add_mime_types($mimes) {
 	$mimes['svg'] = 'image/svg+xml';
+	$mimes['webp'] = 'image/webp';
 	$mimes['ico'] = 'image/vnd.microsoft.icon';
+	$mimes['eot'] = 'application/vnd.ms-fontobject';
 	$mimes['otf'] = 'application/octet-stream';
-	$mimes['ttf'] = 'application/octet-stream';
-	$mimes['woff'] = 'application/octet-stream';
-	$mimes['woff2'] = 'application/octet-stream';
+	$mimes['ttf'] = 'application/x-font-ttf';
+	$mimes['woff'] = 'application/x-font-woff';
+	$mimes['woff2'] = 'application/font-woff2';
 	return $mimes;
+}
+
+// unfiltered uploads
+
+function bc_unfiltered_upload($caps) {
+	define('ALLOW_UNFILTERED_UPLOADS', true);
 }
 
 // handle content
@@ -1156,13 +1172,13 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 	$html = '';
 
 	if (_BC['bc_form_active'] == 'yes') {
-		$html .= '<form id="contact-form">';
 		$forms = json_decode(_BC['bc_form_json'], true);
 		$index = ($content) ? $content : 0;
 		$m = false;
 
 		if (array_key_exists($index, $forms)) {
 			$form = $forms[$index];
+			$html .= '<form id="' . $index . '-form">';
 
 			foreach ($form['rows'] as $row) {
 				$html .= '<div class="row">';
@@ -1178,7 +1194,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 
 						switch ($field['type']) {
 							case 'textarea': {
-								$html .= '<textarea id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
+								$html .= '<textarea maxlength="2000" id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
 								break;
 							}
 							case 'checkbox': {
@@ -1201,7 +1217,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 			}
 			$html .= '<div class="mb-3">';
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
-			$html .= '<input type="hidden" name="form_id" value="' . $id . '">';
+			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
 			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
 			$html .= '<input id="contact-button" type="button" value="Send">';
 			$html .= '</div>';
@@ -1214,33 +1230,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 
 			$url = admin_url('admin-ajax.php');
 
-			$html .= "<script>$(function(){
-				$('article').on('click','#contact-button',function(){
-					var f=$('#contact-form');
-					var m=$('#contact-msg');
-					m.text('...');
-					var ne=$('.f').filter(function(){
-						return this.value != '';
-					});
-					if(ne.length==0){
-						m.text('Please complete all the required fields.');
-						return false;
-					}else{
-						$.ajax({
-							type:'POST',
-							url:'{$url}',
-							data:f.serialize(),
-							dataType:'json',
-							success:function(res){
-								if(res.status=='success'){
-									f[0].reset();
-								}
-								m.text(res.errmessage);
-							}
-						});
-					}
-				});
-			});</script>";
+			$html .= '<script>document.addEventListener("DOMContentLoaded",function(){$(function(){$("form").on("click","#contact-button",function(){var f=$("#' . $index . '-form");var m=$("#contact-msg");m.text("...");var ne = $(".f").filter(function(){return this.value!="";});if(ne.length==0){m.text("Please complete all the required fields.");return false;}else{$.ajax({type:"POST",url:"' . $url . '",data:f.serialize(),dataType:"json",success:function(res){if(res.status=="success"){f[0].reset();}m.text(res.errmessage);}});}});});});</script>';
 		}
 	}
 
@@ -1254,39 +1244,48 @@ function bc_contact_form_callback() {
 		$error = 'verification error, try again.';
 	}
 	else {
-		$id = $_POST['form_id'];
+		$index = $_POST['form_id'];
 		$forms = json_decode(_BC['bc_form_json'], true);
 		$message = 'IP address: ' . $_SERVER['REMOTE_ADDR'] . "\n\n";
 
-		foreach ($forms[$id] as $field => $data) {
-			$sane = '';
+		if (array_key_exists($index, $forms)) {
+			$form = $forms[$index];
+			foreach ($form['rows'] as $row) {
+				foreach ($row['cols'] as $col) {
+					foreach ($col['fields'] as $field) {
+						$sane = '';
 
-			switch ($field) {
-				case 'email': {
-					$sane = filter_var($_POST[$field], FILTER_SANITIZE_EMAIL);
-					break;
-				}
-				case 'message': {
-					$sane = stripslashes($_POST[$field]);
-					break;
-				}
-				default: {
-					$sane = filter_var($_POST[$field], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW);
-				}
-			}
+						switch ($field['type']) {
+							case 'email': {
+								$sane = filter_var($_POST[strtolower($field['label'])], FILTER_SANITIZE_EMAIL);
+								break;
+							}
+							case 'message': {
+								$sane = stripslashes($_POST[strtolower($field['label'])]);
+								break;
+							}
+							default: {
+								$sane = filter_var($_POST[strtolower($field['label'])], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW);
+							}
+						}
 
-			$message .= $field . ': ';
-			if (strlen($sane) > 50) {
-				$message .= "\n\n" . $sane . "\n\n";
-			}
-			else {
-				$message .= $sane . "\n";
+						if ($sane) {
+							$message .= $field['label'] . ': ';
+							if (strlen($sane) > 50) {
+								$message .= "\n\n" . $sane . "\n\n";
+							}
+							else {
+								$message .= $sane . "\n";
+							}
+						}
+					}
+				}
 			}
 		}
 
 		$subject = 'A messsage from ' . get_option('blogname');
-		$sendmsg = _BC['bc_form_success'];
-		$to = _BC['bc_form_email'];
+		$sendmsg = $form['success_msg'];
+		$to = $form['send_to'];
 
 		$parsed = parse_url(site_url());
 
@@ -1480,6 +1479,10 @@ if (_BC['bc_mimes'] == 'yes') {
 	add_filter('upload_mimes', 'bc_add_mime_types');
 }
 
+if (_BC['bc_unfiltered'] == 'yes') {
+	add_filter('init', 'bc_unfiltered_upload');
+}
+
 if (_BC['bc_views'] == 'yes') {
 	add_action('wp', 'bc_view_count');
 	add_action('manage_posts_custom_column', 'bc_posts_custom_column_views', 5, 2);
@@ -1534,5 +1537,13 @@ add_action('rest_api_init', function() {
 	$api = new _bcAPI();
 	$api->add_routes();
 });
+
+add_action('wp_mail_failed', 'bc_mail_error', 10, 1);
+
+function bc_mail_error($wp_error) {
+	echo "<pre>";
+	print_r($wp_error);
+	echo "</pre>";
+}
 
 // eof

@@ -17,6 +17,7 @@ jQuery(function($) {
 		'bc_nocat',
 		'bc_columns',
 		'bc_mimes',
+		'bc_unfiltered',
 		'bc_views',
 		'bc_shortcodes',
 		'bc_cache',
