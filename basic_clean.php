@@ -984,6 +984,12 @@ function bc_handle_content($content) {
 
 // remove crap
 
+function bc_remove_img_width_height($value, $image, $context, $attachment_id) {
+    if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content')
+        return false;
+    return $value;
+}
+
 function bc_clean_category_list($list) {
 	return str_replace('rel="category tag"', 'rel="tag"', $list);
 }
@@ -1133,7 +1139,7 @@ function bc_media_downloads_save($post, $attachment) {
 
 function bc_login_logo() {
 	if (_BC['bc_logo'] != '') {
-		echo '<style>h1 a { background-image:url(/uploads/' . _BC['bc_logo'] . ') !important; height: 100px !important; background-size: cover !important; }</style>';
+		echo '<style>h1 a{background-image:url(/uploads/' . _BC['bc_logo'] . ') !important;height:100px !important;width:auto !important;background-size:auto 100px !important}</style>';
 	}
 }
 
@@ -1418,6 +1424,7 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
+	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
@@ -1441,8 +1448,8 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
-if (_BC['bc_cache'] != false) {
-	add_action('init', 'bc_set_cache_control');
+if ((!is_admin()) && (_BC['bc_cache'] != false)) {
+	add_action('send_headers', 'bc_set_cache_control');
 }
 
 if (_BC['bc_sitemap'] == 'yes') {
