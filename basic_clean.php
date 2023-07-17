@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://localhost
- * Version: 1.2.1
+ * Version: 1.2.2
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -1303,6 +1303,7 @@ function bc_contact_form_callback() {
 			$error = $sendmsg;
 		}
 		else {
+			$status = 'failed';
 			$error = 'error(s)';
 		}
 	}
