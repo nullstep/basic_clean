@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://localhost
- * Version: 1.2.2
+ * Version: 1.2.3
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -1193,29 +1193,38 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 					$html .= '<div class="' . $col['class'] . '">';
 
 					foreach ($col['fields'] as $field) {
-						$name = str_replace(' ', '_', strtolower($field['label']));
-						$req = ($field['required'] == 'yes') ? 'f ' : '';
-						$html .= '<div class="mb-3">';
-						$html .= '<label for="' . $name . '" class="form-label">' . $field['label'] . (($req) ? ' *' : '') . '</label>';
-
-						switch ($field['type']) {
-							case 'textarea': {
-								$html .= '<textarea maxlength="2000" id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
-								break;
-							}
-							case 'checkbox': {
-								$html .= '<input id="' . $name . '" type="checkbox" class="' . $req . 'form-check-input" name="' . $name . '">';
-								break;
-							}
-							default: {
-								$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '">';
-							}
+						if ($field['type'] == 'title') {
+							$html .= '<div class="mb-3">';
+								$html .= '<div class="form-title-box">';
+									$html .= '<p class="form-title-text">' . $field['label'] . '</p>';
+								$html .= '</div>';
+							$html .= '</div>';
 						}
+						else {
+							$name = str_replace(' ', '_', strtolower($field['label']));
+							$req = ($field['required'] == 'yes') ? 'f ' : '';
+							$html .= '<div class="mb-3">';
+							$html .= '<label for="' . $name . '" class="form-label">' . $field['label'] . (($req) ? ' *' : '') . '</label>';
 
-						if ($req) {
-							$m = true;
+							switch ($field['type']) {
+								case 'textarea': {
+									$html .= '<textarea maxlength="2000" id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
+									break;
+								}
+								case 'checkbox': {
+									$html .= '<input id="' . $name . '" type="checkbox" class="' . $req . 'form-check-input" name="' . $name . '">';
+									break;
+								}
+								default: {
+									$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '">';
+								}
+							}
+
+							if ($req) {
+								$m = true;
+							}
+							$html .= '</div>';
 						}
-						$html .= '</div>';
 					}
 					$html .= '</div>';
 				}
@@ -1449,8 +1458,8 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
-if ((!is_admin()) && (_BC['bc_cache'] != false)) {
-	add_action('send_headers', 'bc_set_cache_control');
+if (_BC['bc_cache'] != false) {
+	add_action('init', 'bc_set_cache_control');
 }
 
 if (_BC['bc_sitemap'] == 'yes') {
