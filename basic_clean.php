@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://localhost
- * Version: 1.2.3
+ * Version: 1.2.4
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -1268,29 +1268,33 @@ function bc_contact_form_callback() {
 			foreach ($form['rows'] as $row) {
 				foreach ($row['cols'] as $col) {
 					foreach ($col['fields'] as $field) {
-						$sane = '';
 
-						switch ($field['type']) {
-							case 'email': {
-								$sane = filter_var($_POST[strtolower($field['label'])], FILTER_SANITIZE_EMAIL);
-								break;
-							}
-							case 'message': {
-								$sane = stripslashes($_POST[strtolower($field['label'])]);
-								break;
-							}
-							default: {
-								$sane = filter_var($_POST[strtolower($field['label'])], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW);
-							}
-						}
+						if ($field['type'] != 'title') {
+							$sane = '';
+							$name = str_replace(' ', '_', strtolower($field['label']));
 
-						if ($sane) {
-							$message .= $field['label'] . ': ';
-							if (strlen($sane) > 50) {
-								$message .= "\n\n" . $sane . "\n\n";
+							switch ($field['type']) {
+								case 'email': {
+									$sane = filter_var($_POST[$name], FILTER_SANITIZE_EMAIL);
+									break;
+								}
+								case 'message': {
+									$sane = stripslashes($_POST[$name]);
+									break;
+								}
+								default: {
+									$sane = filter_var($_POST[$name], FILTER_SANITIZE_STRING, FILTER_FLAG_STRIP_LOW);
+								}
 							}
-							else {
-								$message .= $sane . "\n";
+
+							if ($sane) {
+								$message .= $field['label'] . ': ';
+								if (strlen($sane) > 50) {
+									$message .= "\n\n" . $sane . "\n\n";
+								}
+								else {
+									$message .= $sane . "\n";
+								}
 							}
 						}
 					}
