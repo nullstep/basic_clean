@@ -111,10 +111,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_latest_images' => [
-		'type' => 'string',
-		'default' => 'no'
-	],
 
 	'bc_cleaning' => [
 		'type' => 'string',
@@ -243,10 +239,6 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_ogmeta' => [
 				'label' => 'OpenGraph Meta Tags',
-				'type' => 'check'
-			],
-			'bc_latest_images' => [
-				'label' => 'Show Images in Latest Posts',
 				'type' => 'check'
 			]
 		]
@@ -1021,11 +1013,18 @@ function bc_remove_thumbnail_dimensions($html){
 function bc_og_meta() {
 	$image = (has_post_thumbnail()) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id(get_queried_object()->ID))) : [''];
 
+	if (is_front_page()) {
+		$description = get_bloginfo('description');
+	}
+	else if (is_page() || is_singular('post')) {
+		$description = bc_excerpt(get_the_content_feed(), 20) . '&hellip';
+	}
+
 	$tags = [
 		'locale' => get_locale(),
 		'title' => wp_title(':', FALSE, 'right') . get_option('blogname'),
 		'url' => get_the_permalink(),
-		'description' => get_the_excerpt(),
+		'description' => $description,
 		'image' => get_site_url() . '/uploads/' . end($image),
 		'type' => (is_single()) ? 'article' : 'website'
 	];
@@ -1033,6 +1032,10 @@ function bc_og_meta() {
 	foreach ($tags as $p => $c) {
 		echo "\t" . '<meta property="og:' . $p . '" content="' . $c . '">' . "\n";
 	}
+}
+
+function bc_excerpt($content, $count) {
+	return implode(' ', array_slice(explode(' ', trim(str_replace(['<p>', '</p>'], [' ', ''], strip_tags($content, '<p>')))), 0, $count));
 }
 
 // clean nav items
@@ -1462,8 +1465,8 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
-if (_BC['bc_cache'] != false) {
-	add_action('init', 'bc_set_cache_control');
+if ((!is_admin()) && (_BC['bc_cache'] != false)) {
+	add_action('send_headers', 'bc_set_cache_control');
 }
 
 if (_BC['bc_sitemap'] == 'yes') {

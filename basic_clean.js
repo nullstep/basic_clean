@@ -23,7 +23,6 @@ jQuery(function($) {
 		'bc_cache',
 		'bc_sitemap',
 		'bc_ogmeta',
-		'bc_latest_images',
 		'bc_cleaning',
 		'bc_htaccess',
 		'bc_global',
