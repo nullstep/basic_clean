@@ -1155,7 +1155,7 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 	$first = 1;
 
 	for ($p = 0; $p < $count; $p++) {
-		$text .= '<span class="lorem">';
+		$text .= '<p>';
 		if ($p == 0) {
 			for ($l = 0; $l < 5; $l++) {
 				$text .= (($l == 0) ? ucwords($words[$l]) : $words[$l]) . ' ';
@@ -1170,7 +1170,7 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 			$text = rtrim($text, ', ') . '. ';
 			$first = 0;
 		}
-		$text .= '</span>';
+		$text .= '</p>';
 	}
 	return $text;
 }
