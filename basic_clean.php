@@ -1011,7 +1011,8 @@ function bc_remove_thumbnail_dimensions($html){
 // add opengraph meta
 
 function bc_og_meta() {
-	$image = (has_post_thumbnail()) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id(get_queried_object()->ID))) : [''];
+	$id = get_queried_object_id();
+	$image = (has_post_thumbnail($id)) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id($id))) : [''];
 
 	if (is_front_page()) {
 		$description = get_bloginfo('description');
@@ -1023,7 +1024,7 @@ function bc_og_meta() {
 	$tags = [
 		'locale' => get_locale(),
 		'title' => wp_title(':', FALSE, 'right') . get_option('blogname'),
-		'url' => get_the_permalink(),
+		'url' => get_the_permalink($id),
 		'description' => $description,
 		'image' => get_site_url() . '/uploads/' . end($image),
 		'type' => (is_single()) ? 'article' : 'website'
