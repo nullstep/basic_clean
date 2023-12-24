@@ -365,7 +365,7 @@ class _bcSettings {
 		$args = _ARGS_BASIC_CLEAN;
 
 		foreach (_ARGS_BASIC_CLEAN as $key => $val) {
-			$val['required'] = true;
+			$val['required'] = TRUE;
 
 			switch ($val['type']) {
 				case 'integer': {
@@ -473,7 +473,7 @@ class _bcMenu {
 	}
 
 	public function register_assets() {
-		$boo = microtime(false);
+		$boo = microtime(FALSE);
 		wp_register_script($this->slug, $this->assets_url . '/' . _PLUGIN_BASIC_CLEAN . '.js?' . $boo, ['jquery']);
 		wp_register_style($this->slug, $this->assets_url . '/' . _PLUGIN_BASIC_CLEAN . '.css?' . $boo);
 		wp_localize_script($this->slug, _PLUGIN_BASIC_CLEAN, [
@@ -621,7 +621,7 @@ class _bcLogin {
 		$pagenow = 'index.php';
 
 		if (!defined('WP_USE_THEMES')) {
-			define('WP_USE_THEMES', true);
+			define('WP_USE_THEMES', TRUE);
 		}
 
 		wp();
@@ -663,7 +663,7 @@ class _bcLogin {
 
 		$request = parse_url( $_SERVER['REQUEST_URI'] );
 
-		if ((strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false || untrailingslashit($request['path']) === site_url('wp-login', 'relative')) && !is_admin()) {
+		if ((strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== FALSE || untrailingslashit($request['path']) === site_url('wp-login', 'relative')) && !is_admin()) {
 			$this->wp_login_php = true;
 			$_SERVER['REQUEST_URI'] = $this->user_trailingslashit( '/' . str_repeat( '-/', 10 ) );
 			$pagenow = 'index.php';
@@ -689,7 +689,7 @@ class _bcLogin {
 			die();
 		}
 		elseif ($this->wp_login_php) {
-			if (($referer = wp_get_referer()) && strpos($referer, 'wp-activate.php') !== false && ($referer = parse_url($referer)) && !empty($referer['query'])) {
+			if (($referer = wp_get_referer()) && strpos($referer, 'wp-activate.php') !== FALSE && ($referer = parse_url($referer)) && !empty($referer['query'])) {
 				parse_str($referer['query'], $referer);
 
 				if (!empty($referer['key']) && ($result = wpmu_activate_signup($referer['key'])) && is_wp_error($result) && ($result->get_error_code() === 'already_active' || $result->get_error_code() === 'blog_taken')) {
@@ -721,8 +721,8 @@ class _bcLogin {
 		return $this->filter_wp_login_php($location);
 	}
 
-	public function filter_wp_login_php($url, $scheme = null) {
-		if (strpos($url, 'wp-login.php') !== false) {
+	public function filter_wp_login_php($url, $scheme = NULL) {
+		if (strpos($url, 'wp-login.php') !== FALSE) {
 			if (is_ssl()) {
 				$scheme = 'https';
 			}
@@ -752,7 +752,7 @@ class _bcLogin {
 //  ████████▀    ▀██████▀   ████████▀     ██████████
 
 function bc_debug() {
-	$debug = print_r(error_get_last(), true);
+	$debug = print_r(error_get_last(), TRUE);
 	echo '<p>php-error: ' . esc_attr($debug) . '</p>';
 }
 
@@ -764,7 +764,7 @@ function bc_get_views($id) {
 	}
 	else {
 		$count_key = 'post_views_count';
-		$count = get_post_meta($id, $count_key, true);
+		$count = get_post_meta($id, $count_key, TRUE);
 
 		if ($count == '') {
 			delete_post_meta($id, $count_key);
@@ -781,7 +781,7 @@ function bc_set_views($id) {
 
 	if (!in_array($ip, $ips)) {
 		$count_key = 'post_views_count';
-		$count = get_post_meta($id, $count_key, true);
+		$count = get_post_meta($id, $count_key, TRUE);
 
 		if ($count == '') {
 			$count = 0;
@@ -906,7 +906,7 @@ function bc_no_category_base_rewrite_rules($category_rewrite) {
 	global $wp_rewrite;
 	$category_rewrite = [];
 	$categories = get_categories([
-		'hide_empty' => false
+		'hide_empty' => FALSE
 	]);
 
 	foreach ($categories as $category) {
@@ -916,7 +916,7 @@ function bc_no_category_base_rewrite_rules($category_rewrite) {
 			$category->parent = 0;
 		}
 		elseif ($category->parent != 0) {
-			$category_nicename = get_category_parents($category->parent, false, '/', true) . $category_nicename;
+			$category_nicename = get_category_parents($category->parent, FALSE, '/', TRUE) . $category_nicename;
 		}
 		$category_rewrite["({$category_nicename})/(?:feed/)?(feed|rdf|rss|rss2|atom)/?$"] = 'index.php?category_name=$matches[1]&feed=$matches[2]';
 		$category_rewrite["({$category_nicename})/{$wp_rewrite->pagination_base}/?([0-9]{1,})/?$"] = 'index.php?category_name=$matches[1]&paged=$matches[2]';
@@ -955,13 +955,14 @@ function bc_add_mime_types($mimes) {
 	$mimes['ttf'] = 'application/x-font-ttf';
 	$mimes['woff'] = 'application/x-font-woff';
 	$mimes['woff2'] = 'application/font-woff2';
+
 	return $mimes;
 }
 
 // unfiltered uploads
 
 function bc_unfiltered_upload($caps) {
-	define('ALLOW_UNFILTERED_UPLOADS', true);
+	define('ALLOW_UNFILTERED_UPLOADS', TRUE);
 }
 
 // handle content
@@ -977,8 +978,10 @@ function bc_handle_content($content) {
 // remove crap
 
 function bc_remove_img_width_height($value, $image, $context, $attachment_id) {
-    if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content')
-        return false;
+    if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content') {
+        return FALSE;
+    }
+
     return $value;
 }
 
@@ -1014,11 +1017,11 @@ function bc_og_meta() {
 	$id = get_queried_object_id();
 	$image = (has_post_thumbnail($id)) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id($id))) : [''];
 
-	if (is_front_page()) {
-		$description = get_bloginfo('description');
-	}
-	else if (is_page() || is_singular('post')) {
+	if (is_page() || is_singular('post')) {
 		$description = bc_excerpt(get_the_content_feed(), 20) . '&hellip';
+	}
+	else {
+		$description = get_bloginfo('description');		
 	}
 
 	$tags = [
@@ -1026,9 +1029,12 @@ function bc_og_meta() {
 		'title' => wp_title(':', FALSE, 'right') . get_option('blogname'),
 		'url' => get_the_permalink($id),
 		'description' => $description,
-		'image' => get_site_url() . '/uploads/' . end($image),
 		'type' => (is_single()) ? 'article' : 'website'
 	];
+
+	if (end($image)) {
+		$tags['image'] = get_site_url() . '/uploads/' . end($image);
+	}
 
 	foreach ($tags as $p => $c) {
 		echo "\t" . '<meta property="og:' . $p . '" content="' . $c . '">' . "\n";
@@ -1036,7 +1042,7 @@ function bc_og_meta() {
 }
 
 function bc_excerpt($content, $count) {
-	return implode(' ', array_slice(explode(' ', trim(str_replace(['<p>', '</p>'], [' ', ''], strip_tags($content, '<p>')))), 0, $count));
+	return implode(' ', array_slice(explode(' ', trim(preg_replace ('/<[^>]*>/', ' ', $content))), 0, $count));
 }
 
 // clean nav items
@@ -1050,7 +1056,7 @@ function bc_nav_attributes_filter($var) {
 function bc_add_scripts($hook) {
 	$screen = get_current_screen();
 
-	if ($screen == null) {
+	if ($screen == NULL) {
 		return;
 	}
 
@@ -1077,13 +1083,13 @@ function bc_add_post_metadata() {
 		$screen,
 		'side',
 		'default',
-		null
+		NULL
 	);
 }
 
 function bc_add_post_metadata_callback($post) {
 	wp_nonce_field('css_class_save_data', 'css_class_nonce');
-	$value = get_post_meta($post->ID, 'css_class', true);
+	$value = get_post_meta($post->ID, 'css_class', TRUE);
 	echo '<input class="components-text-control__input" style="margin-top:8px" type="text" name="css_class" value="' . esc_attr($value) . '" placeholder="Class...">';
 }
 
@@ -1126,7 +1132,7 @@ function bc_media_downloads($fields, $post) {
 	$fields['file_downloads'] = [
 		'label' => 'Downloads',
 		'input' => 'text',
-		'value' => get_post_meta($post->ID, 'file_downloads', true),
+		'value' => get_post_meta($post->ID, 'file_downloads', TRUE),
 		'helps' => ''
 	];
 	return $fields;
@@ -1149,7 +1155,7 @@ function bc_login_logo() {
 
 // lorem ipsum shortcode
 
-function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
+function bc_lorem_shortcode($atts = [], $content = NULL, $tag = '') {
 	$count = $content;
 	$words = explode(' ', _BC['bc_random_text']);
 	$text = '';
@@ -1178,13 +1184,13 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 
 // contact form shortcode
 
-function bc_form_shortcode($atts = [], $content = null, $tag = '') {
+function bc_form_shortcode($atts = [], $content = NULL, $tag = '') {
 	$html = '';
 
 	if (_BC['bc_form_active'] == 'yes') {
-		$forms = json_decode(_BC['bc_form_json'], true);
+		$forms = json_decode(_BC['bc_form_json'], TRUE);
 		$index = ($content) ? $content : 0;
-		$m = false;
+		$m = FALSE;
 
 		if (array_key_exists($index, $forms)) {
 			$form = $forms[$index];
@@ -1225,7 +1231,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 							}
 
 							if ($req) {
-								$m = true;
+								$m = TRUE;
 							}
 							$html .= '</div>';
 						}
@@ -1237,7 +1243,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 			$html .= '<div class="mb-3">';
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
-			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
+			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', TRUE, FALSE);
 			$html .= '<input id="contact-button" type="button" value="Send">';
 			$html .= '</div>';
 
@@ -1264,7 +1270,7 @@ function bc_contact_form_callback() {
 	}
 	else {
 		$index = $_POST['form_id'];
-		$forms = json_decode(_BC['bc_form_json'], true);
+		$forms = json_decode(_BC['bc_form_json'], TRUE);
 		$message = 'IP address: ' . $_SERVER['REMOTE_ADDR'] . "\n\n";
 
 		if (array_key_exists($index, $forms)) {
@@ -1365,7 +1371,7 @@ function disable_feed() {
 
 function custom_feed() {
 	$posts = query_posts('showposts=' . 9999);
-	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), true);
+	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), TRUE);
 	echo '<?xml version="1.0" encoding="' . get_option('blog_charset') . '"?' . '>';
 ?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" <?php do_action('rss2_ns'); ?>>
@@ -1379,7 +1385,7 @@ function custom_feed() {
 		<item>
 			<title><?php the_title_rss(); ?></title>
 			<link><?php the_permalink_rss(); ?></link>
-			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', TRUE), FALSE); ?></pubDate>
 			<dc:creator><?php the_author(); ?></dc:creator>
 			<guid isPermaLink="false"><?php the_guid(); ?></guid>
 			<description><![CDATA[<?php the_excerpt_rss() ?>]]></description>
@@ -1466,7 +1472,7 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
-if ((!is_admin()) && (_BC['bc_cache'] != false)) {
+if ((!is_admin()) && (_BC['bc_cache'] != FALSE)) {
 	add_action('send_headers', 'bc_set_cache_control');
 }
 
