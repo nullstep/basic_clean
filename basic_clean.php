@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://localhost
- * Version: 1.2.4
+ * Version: 1.2.5
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -151,6 +151,15 @@ define('_ARGS_BASIC_CLEAN', [
 	]
 ]);
 
+// basic_clean ajax
+
+define('_AJAX_BASIC_CLEAN', [
+	'optimise_tables',
+	'clean_attachments',
+	'clean_revisions',
+	'clean_transients'
+]);
+
 // basic_clean admin 
 
 define('_ADMIN_BASIC_CLEAN', [
@@ -282,6 +291,37 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'check'
 			]
 		]
+	],
+	'database' => [
+		'label' => 'Database',
+		'columns' => 4,
+		'fields' => [
+			'bc_optimise_tables' => [
+				'label' => 'Optimise Tables',
+				'type' => 'button',
+				'action' => 'optimise_tables',
+				'ajax' => TRUE
+			],
+			'bc_clean_attachments' => [
+				'label' => 'Clean Attachments',
+				'type' => 'button',
+				'action' => 'clean_attachments',
+				'ajax' => TRUE
+			],
+			'bc_clean_revisions' => [
+				'label' => 'Clean Revisions',
+				'type' => 'button',
+				'action' => 'clean_revisions',
+				'ajax' => TRUE
+			],
+			'bc_clean_transients' => [
+				'label' => 'Clean Transients',
+				'type' => 'button',
+				'action' => 'clean_transients',
+				'ajax' => TRUE
+			],
+		],
+		'hide_save' => TRUE
 	]
 ]);
 
@@ -512,7 +552,8 @@ class _bcMenu {
 				echo '<nav id="' . $name . '-nav" class="nav-tab-wrapper">';
 
 				foreach ($form as $tid => $tab) {
-					echo '<a href="#' . $name . '-' . $tid . '" class="nav-tab">' . $tab['label'] . '</a>';
+					$save = (isset($tab['hide_save'])) ? 'yes' : 'no';
+					echo '<a href="#' . $name . '-' . $tid . '" class="nav-tab" onclick="bc_tab(\'' . $save . '\')">' . $tab['label'] . '</a>';
 				}
 				echo '</nav>';
 				echo '<div class="tab-content">';
@@ -580,17 +621,63 @@ class _bcMenu {
 								echo '</label>';
 								break;
 							}
+							case 'button': {
+								echo '<label for="' . $fid . '">';
+									echo '&nbsp;';
+								echo '</label>';
+								if ($field['ajax']) {
+									$nonce = wp_create_nonce($field['action']);
+									$link = admin_url('admin-ajax.php?action=' . $field['action'] . '&&nonce=' . $nonce);
+
+									echo '<button class="button-primary" href="javascript(void);" id="btn-' . $field['action'] . '">' . $field['label'] . '</button>';
+									echo '<div id="response-' . $field['action'] . '"><p></p></div>';
+									echo '<script>';
+										echo 'jQuery(function($){';
+											echo '$("#btn-' . $field['action'] . '").on("click",function(e){';
+												echo '$("#btn-' . $field['action'] . '").attr("disabled", "TRUE");';
+												echo 'e.preventDefault();';
+												echo '$.ajax({
+													type: "post",
+													dataType: "json",
+													url: "' . admin_url('admin-ajax.php') . '",
+													data: {
+														action: "' . $field['action'] . '",
+														nonce: "' . $nonce . '"
+													},
+													success: function(response) {
+														$("#btn-' . $field['action'] . '").attr("disabled", "FALSE");
+														if (response.status == "success") {
+															$("#response-' . $field['action'] . ' p").text(response.message);
+														}
+														else {
+															$("#response-' . $field['action'] . ' p").text("There was an error");
+														}
+													}
+												})';
+											echo '});';
+										echo '});';
+									echo '</script>';
+								}
+								else {
+									echo '<button class="button-primary" href="javascript(void);" id="' . $field['action'] . '">' . $field['label'] . '</button>';
+								}
+
+								break;
+							}
 						}
 						echo '</div>';
 					}
 					echo '</div>';
 				}
 				echo '</div>';
-				echo '<div>';
+				echo '<div id="save-button">';
 					submit_button();
 				echo '</div>';
 				echo '<div id="' . $name . '-feedback"></div>';
 			echo '</form>';
+			echo '<script>';
+				echo 'function bc_tab(x){if(x=="yes"){jQuery("#save-button").hide();}else{jQuery("#save-button").show();}}';
+			echo '</script>';
 		echo '</div>';
 	}
 }
@@ -638,7 +725,7 @@ class _bcLogin {
 		return _BC['bc_path'];
 	}
 
-	public function new_login_url($scheme = null) {
+	public function new_login_url($scheme = NULL) {
 		if (get_option('permalink_structure')) {
 			return $this->user_trailingslashit(home_url('/', $scheme) . $this->new_login_slug());
 		}
@@ -664,7 +751,7 @@ class _bcLogin {
 		$request = parse_url( $_SERVER['REQUEST_URI'] );
 
 		if ((strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== FALSE || untrailingslashit($request['path']) === site_url('wp-login', 'relative')) && !is_admin()) {
-			$this->wp_login_php = true;
+			$this->wp_login_php = TRUE;
 			$_SERVER['REQUEST_URI'] = $this->user_trailingslashit( '/' . str_repeat( '-/', 10 ) );
 			$pagenow = 'index.php';
 		}
@@ -1162,7 +1249,7 @@ function bc_lorem_shortcode($atts = [], $content = NULL, $tag = '') {
 	$first = 1;
 
 	for ($p = 0; $p < $count; $p++) {
-		$text .= '<p>';
+		$text .= '<span class="lorem">';
 		if ($p == 0) {
 			for ($l = 0; $l < 5; $l++) {
 				$text .= (($l == 0) ? ucwords($words[$l]) : $words[$l]) . ' ';
@@ -1177,7 +1264,7 @@ function bc_lorem_shortcode($atts = [], $content = NULL, $tag = '') {
 			$text = rtrim($text, ', ') . '. ';
 			$first = 0;
 		}
-		$text .= '</p>';
+		$text .= '</span>';
 	}
 	return $text;
 }
@@ -1399,6 +1486,77 @@ function custom_feed() {
 <?php
 }
 
+//     ▄████████       ▄█     ▄████████  ▀████    ▐████▀  
+//    ███    ███      ███    ███    ███    ███▌   ████▀   
+//    ███    ███      ███    ███    ███     ███  ▐███     
+//    ███    ███      ███    ███    ███     ▀███▄███▀     
+//  ▀███████████      ███  ▀███████████     ████▀██▄      
+//    ███    ███      ███    ███    ███    ▐███  ▀███     
+//    ███    ███  █▄ ▄███    ███    ███   ▄███     ███▄   
+//    ███    █▀   ▀▀▀▀▀▀     ███    █▀   ████       ███▄
+
+function bc_ajax() {
+	global $wpdb;
+
+	$action = $_POST['action'];
+	$response = [
+		'status' => 'error',
+		'message' => ''
+	];
+
+	if (!wp_verify_nonce($_REQUEST['nonce'], $action)) {
+		$response['message'] = 'nonce verification failed';
+	}
+	else {
+		// nonce verified
+
+		switch($action) {
+			case 'optimise_tables': {
+				$sql = "OPTIMIZE TABLE " . $wpdb->prefix . "posts, " . $wpdb->prefix . "postmeta, " . $wpdb->prefix . "options;";
+				$results = $wpdb->query($sql);
+
+				$response['status'] = 'success';
+				$response['message'] = 'tables optimised';
+
+				break;
+			}
+			case 'clean_attachments': {
+				$sql = "DELETE FROM " . $wpdb->prefix . "posts WHERE post_type = 'attachment' AND post_parent = 0;";
+				$results = $wpdb->query($sql);
+
+				$response['status'] = 'success';
+				$response['message'] = 'attachments cleaned: ' . $results;
+
+				break;
+			}
+			case 'clean_revisions': {
+				$sql = "DELETE FROM " . $wpdb->prefix . "posts WHERE post_type = 'revision';";
+				$results = $wpdb->query($sql);
+
+				$response['status'] = 'success';
+				$response['message'] = 'revisions cleaned: ' . $results;
+
+				break;
+			}
+			case 'clean_transients': {
+				$sql = "DELETE FROM " . $wpdb->prefix . "options WHERE option_name LIKE '_transient_%';";
+				$results = $wpdb->query($sql);
+
+				$response['status'] = 'success';
+				$response['message'] = 'transients cleaned: ' . $results;
+
+				break;
+			}
+			default: {
+				$response['message'] = 'unsupported request';
+			}
+		}
+	}
+
+	echo json_encode($response);
+	wp_die();
+}
+
 //   ▄█   ███▄▄▄▄▄     ▄█       ███      
 //  ███   ███▀▀▀▀██▄  ███   ▀█████████▄  
 //  ███▌  ███    ███  ███▌     ▀███▀▀██  
@@ -1557,6 +1715,16 @@ if (_BC['bc_form_active'] == 'yes') {
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
+
+// set up admin ajax
+
+if (is_admin()) {
+	if (count(_AJAX_BASIC_CLEAN)) {
+		foreach (_AJAX_BASIC_CLEAN as $ajax) {
+			add_action('wp_ajax_' . $ajax, 'bc_ajax');
+		}
+	}
+}
 
 // boot plugin
 

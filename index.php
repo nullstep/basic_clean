@@ -2,12 +2,10 @@
 
 // basic_clean sitemap/file handler
 
-function get_post_by($title, $type) {
-	$array = get_posts([
-		'title' => $title,
-		'post_type' => $type
-	]);
-	return get_post($array[0]->ID);
+function get_attachment_id_by_filename($filename) {
+    global $wpdb;
+    $attachments = $wpdb->get_results("SELECT post_id FROM $wpdb->postmeta WHERE meta_key = '_wp_attached_file' AND meta_value like'%$filename'", OBJECT);
+    return $attachments[0]->post_id ?? false;
 }
 
 if (isset($_GET['file'])) {
@@ -218,10 +216,10 @@ if (isset($_GET['file'])) {
 			$ips = explode("\n", str_replace(["\r\n","\n\r","\r"], "\n", _BC['bc_ignore']));
 
 			if (!in_array($ip, $ips)) {
-				$post = get_post_by($name, 'attachment');
-				if ($post) {
-					$count = get_post_meta($post->ID, 'file_downloads', true);
-					update_post_meta($post->ID, 'file_downloads', ($count != '') ? (int)$count + 1 : 1);
+				$id = get_attachment_id_by_filename($name);
+				if ($id) {
+					$count = get_post_meta($id, 'file_downloads', true);
+					update_post_meta($id, 'file_downloads', ($count != '') ? (int)$count + 1 : 1);
 				}
 			}
 
