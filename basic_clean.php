@@ -1331,7 +1331,7 @@ function bc_form_shortcode($atts = [], $content = NULL, $tag = '') {
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
 			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', TRUE, FALSE);
-			$html .= '<input id="contact-button" type="button" value="Send">';
+			$html .= '<input class="btn btn-primary" id="contact-button" type="button" value="Send">';
 			$html .= '</div>';
 
 			if ($m) {
