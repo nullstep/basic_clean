@@ -627,7 +627,7 @@ class _bcMenu {
 								echo '</label>';
 								if ($field['ajax']) {
 									$nonce = wp_create_nonce($field['action']);
-									$link = admin_url('admin-ajax.php?action=' . $field['action'] . '&&nonce=' . $nonce);
+									$link = admin_url('admin-ajax.php?action=' . $field['action'] . '&nonce=' . $nonce);
 
 									echo '<button class="button-primary" href="javascript(void);" id="btn-' . $field['action'] . '">' . $field['label'] . '</button>';
 									echo '<div id="response-' . $field['action'] . '"><p></p></div>';
