@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://localhost
- * Version: 1.2.5
+ * Version: 1.2.6
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -144,6 +144,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
+	'bc_mail_log' => [
+		'type' => 'string',
+		'default' => 'no'
+	],	
 
 	'bc_random_text' => [
 		'type' => 'string',
@@ -184,7 +188,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'input'
 			],
 			'bc_position' => [
-				'label' => 'Show in Admin Menu',
+				'label' => 'Show in Main Admin Menu',
 				'type' => 'check'
 			]
 		]
@@ -289,6 +293,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_form_active' => [
 				'label' => 'Forms Active',
 				'type' => 'check'
+			],
+			'bc_mail_log' => [
+				'label' => 'Show Mail Errors',
+				'type' => 'check'
 			]
 		]
 	],
@@ -300,28 +308,28 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Optimise Tables',
 				'type' => 'button',
 				'action' => 'optimise_tables',
-				'ajax' => TRUE
+				'ajax' => true
 			],
 			'bc_clean_attachments' => [
 				'label' => 'Clean Attachments',
 				'type' => 'button',
 				'action' => 'clean_attachments',
-				'ajax' => TRUE
+				'ajax' => true
 			],
 			'bc_clean_revisions' => [
 				'label' => 'Clean Revisions',
 				'type' => 'button',
 				'action' => 'clean_revisions',
-				'ajax' => TRUE
+				'ajax' => true
 			],
 			'bc_clean_transients' => [
 				'label' => 'Clean Transients',
 				'type' => 'button',
 				'action' => 'clean_transients',
-				'ajax' => TRUE
+				'ajax' => true
 			],
 		],
-		'hide_save' => TRUE
+		'hide_save' => true
 	]
 ]);
 
@@ -405,7 +413,7 @@ class _bcSettings {
 		$args = _ARGS_BASIC_CLEAN;
 
 		foreach (_ARGS_BASIC_CLEAN as $key => $val) {
-			$val['required'] = TRUE;
+			$val['required'] = true;
 
 			switch ($val['type']) {
 				case 'integer': {
@@ -486,8 +494,8 @@ class _bcMenu {
 			'menu_slug' => $this->slug,
 			'callback' => [$this, 'render_admin'],
 			'icon_url' => 'data:image/svg+xml;base64,' . base64_encode(
-				'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500px" height="500px" viewbox="0 0 500 500"><path fill="#a7aaad" d="M250,9.8L42,129.9v240.2l208,120.1l208-120.1V129.9L250,9.8z M94,159.7c52-30,103.9-60.1,155.8-90.2 c51.9,30.2,104.1,60.2,156.1,90.2c-30.6,17.9-61.4,35.5-92.2,53c-21.3-12.4-42.7-24.4-63.9-36.7c-21.5,12-42.7,24.5-64.1,36.7 c0.2,24.9-0.6,49.8,0.4,74.6c21,11.4,41.3,24.1,62.1,36.1c2.2,0.9,4-1.5,6-2.3c29.6-17.2,59.4-34.2,89.1-51.3l1.8-2.4 c1.5,12.5,0.4,25.2,0.6,37.7c-20.9,12.1-41.9,24-62.7,36.2c-11.1,6-21.8,12.8-32.9,18.8l-1.9-0.4c-30.9-18.3-62.4-35.5-92.8-54.4 c-2.9,0.8-5.5,2.2-8,3.7c-17.6,10.6-35.6,20.6-53.1,31.3C93.7,280.2,94.1,220,94,159.7z M405.6,340.5 c-39.3,22.2-78,45.5-117.4,67.4c-0.1,0.8-0.4,2.5-0.5,3.3c-0.4-0.4-1.3-1.1-1.7-1.4c-12.2,6.6-24.1,13.8-36.1,20.8 c-37.9-21.8-75.7-43.8-113.4-65.8c10.8-5.9,21.4-12.3,32.2-18.2c27,15.8,54,31.5,81.1,46.9c39.5-22.9,78.9-45.8,118.5-68.6 c2.2-1.6,6.4-2.2,5.7-5.8c-0.1-30.4,0-60.7,0-91.1c10.8-5.9,21-12.8,32.2-17.9C405.5,253.5,406.6,297,405.6,340.5z"/><path fill="#a7aaad" d="M154.1,194.1c32.1-18.1,63.7-37,95.7-55.2c21.4,12.7,43.1,24.8,64.4,37.6c9.6-4.5,18.5-10.4,27.7-15.6l0.2-1.1 c-30.7-17.9-61.5-35.7-92.3-53.6c-40.1,23-80,46.5-120.2,69.6c-0.9,0.4-2.7,1.3-3.6,1.7c-0.6,30.2-0.1,60.4-0.3,90.6 c0.2,5.8-0.6,11.7,0.6,17.4c9-5.9,18.5-10.9,27.6-16.5C153.8,244.1,153.7,219.1,154.1,194.1z"/></svg>'),
-			'position' => 30
+				'<svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="500px" height="500px" viewbox="0 0 500 500"><path fill="#a7aaad" d="M250,9.8L42,129.9v240.2l208,120.1l208-120.1V129.9L250,9.8z M384.8,209.6H175v80.7h209.8v59.8H115.2v-14.6 v-45.3v-80.7v-45.3v-14.6h269.7V209.6z"/></svg>'),
+			'position' => 3
 		];
 
 		if (_BC['bc_position'] == 'yes') {
@@ -513,7 +521,7 @@ class _bcMenu {
 	}
 
 	public function register_assets() {
-		$boo = microtime(FALSE);
+		$boo = microtime(false);
 		wp_register_script($this->slug, $this->assets_url . '/' . _PLUGIN_BASIC_CLEAN . '.js?' . $boo, ['jquery']);
 		wp_register_style($this->slug, $this->assets_url . '/' . _PLUGIN_BASIC_CLEAN . '.css?' . $boo);
 		wp_localize_script($this->slug, _PLUGIN_BASIC_CLEAN, [
@@ -634,7 +642,7 @@ class _bcMenu {
 									echo '<script>';
 										echo 'jQuery(function($){';
 											echo '$("#btn-' . $field['action'] . '").on("click",function(e){';
-												echo '$("#btn-' . $field['action'] . '").attr("disabled", "TRUE");';
+												echo '$("#btn-' . $field['action'] . '").attr("disabled", true);';
 												echo 'e.preventDefault();';
 												echo '$.ajax({
 													type: "post",
@@ -645,7 +653,7 @@ class _bcMenu {
 														nonce: "' . $nonce . '"
 													},
 													success: function(response) {
-														$("#btn-' . $field['action'] . '").attr("disabled", "FALSE");
+														$("#btn-' . $field['action'] . '").attr("disabled", false);
 														if (response.status == "success") {
 															$("#response-' . $field['action'] . ' p").text(response.message);
 														}
@@ -708,7 +716,7 @@ class _bcLogin {
 		$pagenow = 'index.php';
 
 		if (!defined('WP_USE_THEMES')) {
-			define('WP_USE_THEMES', TRUE);
+			define('WP_USE_THEMES', true);
 		}
 
 		wp();
@@ -725,7 +733,7 @@ class _bcLogin {
 		return _BC['bc_path'];
 	}
 
-	public function new_login_url($scheme = NULL) {
+	public function new_login_url($scheme = null) {
 		if (get_option('permalink_structure')) {
 			return $this->user_trailingslashit(home_url('/', $scheme) . $this->new_login_slug());
 		}
@@ -750,8 +758,8 @@ class _bcLogin {
 
 		$request = parse_url( $_SERVER['REQUEST_URI'] );
 
-		if ((strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== FALSE || untrailingslashit($request['path']) === site_url('wp-login', 'relative')) && !is_admin()) {
-			$this->wp_login_php = TRUE;
+		if ((strpos($_SERVER['REQUEST_URI'], 'wp-login.php') !== false || untrailingslashit($request['path']) === site_url('wp-login', 'relative')) && !is_admin()) {
+			$this->wp_login_php = true;
 			$_SERVER['REQUEST_URI'] = $this->user_trailingslashit( '/' . str_repeat( '-/', 10 ) );
 			$pagenow = 'index.php';
 		}
@@ -776,7 +784,7 @@ class _bcLogin {
 			die();
 		}
 		elseif ($this->wp_login_php) {
-			if (($referer = wp_get_referer()) && strpos($referer, 'wp-activate.php') !== FALSE && ($referer = parse_url($referer)) && !empty($referer['query'])) {
+			if (($referer = wp_get_referer()) && strpos($referer, 'wp-activate.php') !== false && ($referer = parse_url($referer)) && !empty($referer['query'])) {
 				parse_str($referer['query'], $referer);
 
 				if (!empty($referer['key']) && ($result = wpmu_activate_signup($referer['key'])) && is_wp_error($result) && ($result->get_error_code() === 'already_active' || $result->get_error_code() === 'blog_taken')) {
@@ -808,8 +816,8 @@ class _bcLogin {
 		return $this->filter_wp_login_php($location);
 	}
 
-	public function filter_wp_login_php($url, $scheme = NULL) {
-		if (strpos($url, 'wp-login.php') !== FALSE) {
+	public function filter_wp_login_php($url, $scheme = null) {
+		if (strpos($url, 'wp-login.php') !== false) {
 			if (is_ssl()) {
 				$scheme = 'https';
 			}
@@ -839,8 +847,8 @@ class _bcLogin {
 //  ████████▀    ▀██████▀   ████████▀     ██████████
 
 function bc_debug() {
-	$debug = print_r(error_get_last(), TRUE);
-	echo '<p>php-error: ' . esc_attr($debug) . '</p>';
+	$debug = print_r(error_get_last(), true);
+	echo '<pre>php-error: ' . esc_attr($debug) . '</pre>';
 }
 
 // pages/posts views count
@@ -851,7 +859,7 @@ function bc_get_views($id) {
 	}
 	else {
 		$count_key = 'post_views_count';
-		$count = get_post_meta($id, $count_key, TRUE);
+		$count = get_post_meta($id, $count_key, true);
 
 		if ($count == '') {
 			delete_post_meta($id, $count_key);
@@ -868,7 +876,7 @@ function bc_set_views($id) {
 
 	if (!in_array($ip, $ips)) {
 		$count_key = 'post_views_count';
-		$count = get_post_meta($id, $count_key, TRUE);
+		$count = get_post_meta($id, $count_key, true);
 
 		if ($count == '') {
 			$count = 0;
@@ -964,6 +972,14 @@ function bc_google_code() {
 <?php
 }
 
+// mail error log
+
+function bc_mail_error($wp_error) {
+	echo '<pre>';
+		print_r($wp_error);
+	echo '</pre>';
+}
+
 // wp options
 
 function bc_set_wp_options() {
@@ -993,7 +1009,7 @@ function bc_no_category_base_rewrite_rules($category_rewrite) {
 	global $wp_rewrite;
 	$category_rewrite = [];
 	$categories = get_categories([
-		'hide_empty' => FALSE
+		'hide_empty' => false
 	]);
 
 	foreach ($categories as $category) {
@@ -1003,7 +1019,7 @@ function bc_no_category_base_rewrite_rules($category_rewrite) {
 			$category->parent = 0;
 		}
 		elseif ($category->parent != 0) {
-			$category_nicename = get_category_parents($category->parent, FALSE, '/', TRUE) . $category_nicename;
+			$category_nicename = get_category_parents($category->parent, false, '/', true) . $category_nicename;
 		}
 		$category_rewrite["({$category_nicename})/(?:feed/)?(feed|rdf|rss|rss2|atom)/?$"] = 'index.php?category_name=$matches[1]&feed=$matches[2]';
 		$category_rewrite["({$category_nicename})/{$wp_rewrite->pagination_base}/?([0-9]{1,})/?$"] = 'index.php?category_name=$matches[1]&paged=$matches[2]';
@@ -1049,7 +1065,7 @@ function bc_add_mime_types($mimes) {
 // unfiltered uploads
 
 function bc_unfiltered_upload($caps) {
-	define('ALLOW_UNFILTERED_UPLOADS', TRUE);
+	define('ALLOW_UNFILTERED_UPLOADS', true);
 }
 
 // handle content
@@ -1066,7 +1082,7 @@ function bc_handle_content($content) {
 
 function bc_remove_img_width_height($value, $image, $context, $attachment_id) {
     if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content') {
-        return FALSE;
+        return false;
     }
 
     return $value;
@@ -1113,7 +1129,7 @@ function bc_og_meta() {
 
 	$tags = [
 		'locale' => get_locale(),
-		'title' => wp_title(':', FALSE, 'right') . get_option('blogname'),
+		'title' => wp_title(':', false, 'right') . get_option('blogname'),
 		'url' => get_the_permalink($id),
 		'description' => $description,
 		'type' => (is_single()) ? 'article' : 'website'
@@ -1143,7 +1159,7 @@ function bc_nav_attributes_filter($var) {
 function bc_add_scripts($hook) {
 	$screen = get_current_screen();
 
-	if ($screen == NULL) {
+	if ($screen == null) {
 		return;
 	}
 
@@ -1158,68 +1174,13 @@ function bc_add_scripts($hook) {
 	wp_enqueue_code_editor(['type' => 'application/x-httpd-php']);
 }
 
-// post class metadata
-
-function bc_add_post_metadata() {
-	$screen = 'page';
-
-	add_meta_box(
-		'post_meta_box',
-		'CSS Class',
-		'bc_add_post_metadata_callback',
-		$screen,
-		'side',
-		'default',
-		NULL
-	);
-}
-
-function bc_add_post_metadata_callback($post) {
-	wp_nonce_field('css_class_save_data', 'css_class_nonce');
-	$value = get_post_meta($post->ID, 'css_class', TRUE);
-	echo '<input class="components-text-control__input" style="margin-top:8px" type="text" name="css_class" value="' . esc_attr($value) . '" placeholder="Class...">';
-}
-
-function bc_save_post_metadata($id) {
-	if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-		return;
-	}
-
-	if (isset($_POST['post_type']) && 'page' == $_POST['post_type']) {
-		if (!current_user_can('edit_page', $id)) {
-			return;
-		}
-	}
-	else {
-		if (!current_user_can('edit_post', $id)) {
-			return;
-		}
-	}
-
-	if (isset($_POST['post_type'])) {
-
-		if (in_array($_POST['post_type'], ['page', 'post'])) {
-
-			if (!isset($_POST['css_class_nonce'])) {
-				return;
-			}
-
-			if (!wp_verify_nonce($_POST['css_class_nonce'], 'css_class_save_data')) {
-				return;
-			}
-			$data = sanitize_text_field($_POST['css_class']);
-			update_post_meta($id, 'css_class', $data);
-		}
-	}
-}
-
 // media downloads field
 
 function bc_media_downloads($fields, $post) {
 	$fields['file_downloads'] = [
 		'label' => 'Downloads',
 		'input' => 'text',
-		'value' => get_post_meta($post->ID, 'file_downloads', TRUE),
+		'value' => get_post_meta($post->ID, 'file_downloads', true),
 		'helps' => ''
 	];
 	return $fields;
@@ -1242,7 +1203,7 @@ function bc_login_logo() {
 
 // lorem ipsum shortcode
 
-function bc_lorem_shortcode($atts = [], $content = NULL, $tag = '') {
+function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 	$count = $content;
 	$words = explode(' ', _BC['bc_random_text']);
 	$text = '';
@@ -1269,15 +1230,15 @@ function bc_lorem_shortcode($atts = [], $content = NULL, $tag = '') {
 	return $text;
 }
 
-// contact form shortcode
+// form shortcode
 
-function bc_form_shortcode($atts = [], $content = NULL, $tag = '') {
+function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 	$html = '';
 
 	if (_BC['bc_form_active'] == 'yes') {
-		$forms = json_decode(_BC['bc_form_json'], TRUE);
+		$forms = json_decode(_BC['bc_form_json'], true);
 		$index = ($content) ? $content : 0;
-		$m = FALSE;
+		$m = false;
 
 		if (array_key_exists($index, $forms)) {
 			$form = $forms[$index];
@@ -1318,7 +1279,7 @@ function bc_form_shortcode($atts = [], $content = NULL, $tag = '') {
 							}
 
 							if ($req) {
-								$m = TRUE;
+								$m = true;
 							}
 							$html .= '</div>';
 						}
@@ -1330,7 +1291,7 @@ function bc_form_shortcode($atts = [], $content = NULL, $tag = '') {
 			$html .= '<div class="mb-3">';
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
-			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', TRUE, FALSE);
+			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
 			$html .= '<input class="btn btn-primary" id="contact-button" type="button" value="Send">';
 			$html .= '</div>';
 
@@ -1357,7 +1318,7 @@ function bc_contact_form_callback() {
 	}
 	else {
 		$index = $_POST['form_id'];
-		$forms = json_decode(_BC['bc_form_json'], TRUE);
+		$forms = json_decode(_BC['bc_form_json'], true);
 		$message = 'IP address: ' . $_SERVER['REMOTE_ADDR'] . "\n\n";
 
 		if (array_key_exists($index, $forms)) {
@@ -1458,7 +1419,7 @@ function disable_feed() {
 
 function custom_feed() {
 	$posts = query_posts('showposts=' . 9999);
-	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), TRUE);
+	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), true);
 	echo '<?xml version="1.0" encoding="' . get_option('blog_charset') . '"?' . '>';
 ?>
 <rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" <?php do_action('rss2_ns'); ?>>
@@ -1472,7 +1433,7 @@ function custom_feed() {
 		<item>
 			<title><?php the_title_rss(); ?></title>
 			<link><?php the_permalink_rss(); ?></link>
-			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', TRUE), FALSE); ?></pubDate>
+			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
 			<dc:creator><?php the_author(); ?></dc:creator>
 			<guid isPermaLink="false"><?php the_guid(); ?></guid>
 			<description><![CDATA[<?php the_excerpt_rss() ?>]]></description>
@@ -1557,6 +1518,172 @@ function bc_ajax() {
 	wp_die();
 }
 
+//  ███    █▄      ▄███████▄  ████████▄      ▄████████      ███         ▄████████  
+//  ███    ███    ███    ███  ███   ▀███    ███    ███  ▀█████████▄    ███    ███  
+//  ███    ███    ███    ███  ███    ███    ███    ███     ▀███▀▀██    ███    █▀   
+//  ███    ███    ███    ███  ███    ███    ███    ███      ███   ▀   ▄███▄▄▄      
+//  ███    ███  ▀█████████▀   ███    ███  ▀███████████      ███      ▀▀███▀▀▀      
+//  ███    ███    ███         ███    ███    ███    ███      ███        ███    █▄   
+//  ███    ███    ███         ███   ▄███    ███    ███      ███        ███    ███  
+//  ████████▀    ▄████▀       ████████▀     ███    █▀      ▄████▀      ██████████
+
+if (!class_exists('WPU')) {
+	class WPU {
+		private $file;
+		private $plugin;
+		private $basename;
+		private $active;
+		private $username;
+		private $repository;
+		private $authorize_token;
+		private $github_response;
+
+		public $requires;
+		public $tested;
+
+		public function __construct($file) {
+			$this->file = $file;
+			add_action('admin_init', [$this, 'set_plugin_properties']);
+
+			return $this;
+		}
+
+		public function set_plugin_properties() {
+			$this->plugin = get_plugin_data($this->file);
+			$this->basename = plugin_basename($this->file);
+			$this->active = is_plugin_active($this->basename);
+		}
+
+		public function set_username($username) {
+			$this->username = $username;
+		}
+
+		public function set_repository($repository) {
+			$this->repository = $repository;
+		}
+
+		public function authorize($token) {
+			$this->authorize_token = $token;
+		}
+
+		private function get_repository_info() {
+			if (is_null($this->github_response)) {
+				$request_uri = sprintf('https://api.github.com/repos/%s/%s/releases', $this->username, $this->repository);
+
+				$curl = curl_init();
+
+				curl_setopt_array($curl, [
+					CURLOPT_URL => $request_uri,
+					CURLOPT_RETURNTRANSFER => true,
+					CURLOPT_ENCODING => '',
+					CURLOPT_MAXREDIRS => 10,
+					CURLOPT_TIMEOUT => 0,
+					CURLOPT_FOLLOWLOCATION => true,
+					CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+					CURLOPT_CUSTOMREQUEST => 'GET',
+					CURLOPT_HTTPHEADER => [
+						'Authorization: token ' . $this->authorize_token,
+						'User-Agent: WPUpdater/1.0.0'
+					]
+				]);
+
+				$response = curl_exec($curl);
+
+				curl_close($curl);
+
+				$response = json_decode($response, true);
+
+				if (is_array($response)) {
+					$response = current($response);
+				}
+
+				$this->github_response = $response;
+			}
+		}
+
+		public function initialize() {
+			add_filter('pre_set_site_transient_update_plugins', [$this, 'modify_transient'], 10, 1);
+			add_filter('plugins_api', [$this, 'plugin_popup'], 10, 3);
+			add_filter('upgrader_post_install', [$this, 'after_install'], 10, 3);
+		}
+
+		public function modify_transient($transient) {
+			if (property_exists($transient, 'checked')) {
+				if ($checked = $transient->checked) {
+					$this->get_repository_info();
+
+					$out_of_date = version_compare($this->github_response['tag_name'], $checked[$this->basename], 'gt');
+
+					if ($out_of_date) {
+						$new_files = $this->github_response['zipball_url'];
+						$slug = current(explode('/', $this->basename));
+
+						$plugin = [
+							'url' => $this->plugin['PluginURI'],
+							'slug' => $slug,
+							'package' => $new_files,
+							'new_version' => $this->github_response['tag_name']
+						];
+
+						$transient->response[$this->basename] = (object) $plugin;
+					}
+				}
+			}
+
+			return $transient;
+		}
+
+		public function plugin_popup($result, $action, $args) {
+			if ($action !== 'plugin_information') {
+				return false;
+			}
+
+			if (!empty($args->slug)) {
+				if ($args->slug == current(explode('/' , $this->basename))) {
+					$this->get_repository_info();
+
+					$plugin = [
+						'name' => $this->plugin['Name'],
+						'slug' => $this->basename,
+						'requires' => $this->$requires ?? '6.3',
+						'tested' => $this->$tested ?? '6.4.3',
+						'version' => $this->github_response['tag_name'],
+						'author' => $this->plugin['AuthorName'],
+						'author_profile' => $this->plugin['AuthorURI'],
+						'last_updated' => $this->github_response['published_at'],
+						'homepage' => $this->plugin['PluginURI'],
+						'short_description' => $this->plugin['Description'],
+						'sections' => [
+							'Description' => $this->plugin['Description'],
+							'Updates' => $this->github_response['body'],
+						],
+						'download_link' => $this->github_response['zipball_url']
+					];
+
+					return (object) $plugin;
+				}
+			}
+
+
+			return $result;
+		}
+
+		public function after_install($response, $hook_extra, $result) {
+			global $wp_filesystem;
+
+			$install_directory = plugin_dir_path($this->file);
+			$wp_filesystem->move($result['destination'], $install_directory);
+			$result['destination'] = $install_directory;
+
+			if ($this->active) {
+				activate_plugin($this->basename);
+			}
+
+			return $result;
+		}
+	}
+}
+
 //   ▄█   ███▄▄▄▄▄     ▄█       ███      
 //  ███   ███▀▀▀▀██▄  ███   ▀█████████▄  
 //  ███▌  ███    ███  ███▌     ▀███▀▀██  
@@ -1595,6 +1722,7 @@ if (_BC['bc_cleaning'] == 'yes') {
 	remove_action('admin_print_scripts', 'print_emoji_detection_script');
 	remove_action('admin_print_styles', 'print_emoji_styles');
 	remove_action('template_redirect', 'rest_output_link_header', 11, 0);
+
 	add_filter('show_admin_bar', '__return_false');
 	add_filter('wp_calculate_image_srcset', '__return_false');
 	add_filter('widget_text', 'shortcode_unautop');
@@ -1607,9 +1735,11 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
+
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
+
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
 }
 
@@ -1630,7 +1760,7 @@ if (_BC['bc_options'] == 'yes') {
 	add_action('init', 'bc_set_wp_options');
 }
 
-if ((!is_admin()) && (_BC['bc_cache'] != FALSE)) {
+if ((!is_admin()) && (_BC['bc_cache'] != false)) {
 	add_action('send_headers', 'bc_set_cache_control');
 }
 
@@ -1647,6 +1777,7 @@ if (_BC['bc_nocat'] == 'yes') {
 	add_action('created_category', 'bc_no_category_base_refresh_rules');
 	add_action('delete_category', 'bc_no_category_base_refresh_rules');
 	add_action('edited_category', 'bc_no_category_base_refresh_rules');
+
 	add_filter('category_rewrite_rules', 'bc_no_category_base_rewrite_rules');
 	add_filter('query_vars', 'bc_no_category_base_query_vars');
 	add_filter('request', 'bc_no_category_base_request');
@@ -1678,9 +1809,10 @@ if (_BC['bc_views'] == 'yes') {
 	if (is_admin()) {
 		add_action('manage_posts_custom_column', 'bc_posts_custom_column_views', 5, 2);
 		add_action('manage_pages_custom_column', 'bc_pages_custom_column_views', 5, 2);
+		add_action('pre_get_posts', 'bc_sort_custom_column_query');
+
 		add_filter('manage_posts_columns', 'bc_posts_column_views');
 		add_filter('manage_pages_columns', 'bc_pages_column_views');
-		add_action('pre_get_posts', 'bc_sort_custom_column_query');
 		add_filter('manage_edit-post_sortable_columns', 'bc_set_posts_sortable_columns');
 		add_filter('manage_edit-page_sortable_columns', 'bc_set_pages_sortable_columns');
 		add_filter('attachment_fields_to_edit', 'bc_media_downloads', 10, 2);
@@ -1690,6 +1822,7 @@ if (_BC['bc_views'] == 'yes') {
 
 if (_BC['bc_htaccess'] == 'yes') {
 	add_action('admin_init', 'bc_flush_htaccess');
+
 	add_filter('mod_rewrite_rules', 'bc_output_htaccess');
 }
 
@@ -1711,7 +1844,12 @@ if (_BC['bc_feeds'] != 'default') {
 if (_BC['bc_form_active'] == 'yes') {
 	add_action('wp_ajax_contact_form_action', 'bc_contact_form_callback');
 	add_action('wp_ajax_nopriv_contact_form_action', 'bc_contact_form_callback');
+
 	add_shortcode('form', 'bc_form_shortcode');
+}
+
+if (_BC['bc_mail_log'] == 'yes') {
+	add_action('wp_mail_failed', 'bc_mail_error', 10, 1);
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
@@ -1724,6 +1862,18 @@ if (is_admin()) {
 			add_action('wp_ajax_' . $ajax, 'bc_ajax');
 		}
 	}
+}
+
+// init updater
+
+if (get_option('auth_key') !== '') {
+	$updater = new WPU(__FILE__);
+	$updater->$requires = '6.4';
+	$updater->$tested = '6.4.3';
+	$updater->set_username('nullstep');
+	$updater->set_repository('basic_clean');
+	$updater->authorize(get_option('auth_key'));
+	$updater->initialize();
 }
 
 // boot plugin
@@ -1739,13 +1889,5 @@ add_action('rest_api_init', function() {
 	$api = new _bcAPI();
 	$api->add_routes();
 });
-
-add_action('wp_mail_failed', 'bc_mail_error', 10, 1);
-
-function bc_mail_error($wp_error) {
-	echo "<pre>";
-	print_r($wp_error);
-	echo "</pre>";
-}
 
 // eof
