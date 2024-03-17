@@ -95,9 +95,13 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-	'bc_shortcodes' => [
+	'bc_shortcode_lorem' => [
 		'type' => 'string',
-		'default' => 'yes'
+		'default' => 'no'
+	],
+	'bc_shortcode_toc' => [
+		'type' => 'string',
+		'default' => 'no'
 	],
 	'bc_cache' => [
 		'type' => 'string',
@@ -238,8 +242,12 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Show Page/Post Views',
 				'type' => 'check'
 			],
-			'bc_shortcodes' => [
-				'label' => 'Shortcodes Active',
+			'bc_shortcode_lorem' => [
+				'label' => 'Lorem Shortcode Active',
+				'type' => 'check'
+			],
+			'bc_shortcode_toc' => [
+				'label' => 'TOC Shortcode Active',
 				'type' => 'check'
 			],
 			'bc_cache' => [
@@ -1081,11 +1089,11 @@ function bc_handle_content($content) {
 // remove crap
 
 function bc_remove_img_width_height($value, $image, $context, $attachment_id) {
-    if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content') {
-        return false;
-    }
+	if ($context === 'the_content' || $context === 'the_excerpt' ||  $context === 'widget_text_content') {
+		return false;
+	}
 
-    return $value;
+	return $value;
 }
 
 function bc_clean_category_list($list) {
@@ -1201,6 +1209,24 @@ function bc_login_logo() {
 	}
 }
 
+//     ▄████████     ▄█    █▄      ▄██████▄      ▄████████      ███      
+//    ███    ███    ███    ███    ███    ███    ███    ███  ▀█████████▄  
+//    ███    █▀     ███    ███    ███    ███    ███    ███     ▀███▀▀██  
+//    ███          ▄███▄▄▄▄███▄▄  ███    ███   ▄███▄▄▄▄██▀      ███   ▀  
+//  ▀███████████  ▀▀███▀▀▀▀███▀   ███    ███  ▀▀███▀▀▀▀▀        ███      
+//           ███    ███    ███    ███    ███  ▀███████████      ███      
+//     ▄█    ███    ███    ███    ███    ███    ███    ███      ███      
+//   ▄████████▀     ███    █▀      ▀██████▀     ███    ███     ▄████▀
+
+//   ▄████████   ▄██████▄   ████████▄      ▄████████     ▄████████  
+//  ███    ███  ███    ███  ███   ▀███    ███    ███    ███    ███  
+//  ███    █▀   ███    ███  ███    ███    ███    █▀     ███    █▀   
+//  ███         ███    ███  ███    ███   ▄███▄▄▄        ███         
+//  ███         ███    ███  ███    ███  ▀▀███▀▀▀      ▀███████████  
+//  ███    █▄   ███    ███  ███    ███    ███    █▄            ███  
+//  ███    ███  ███    ███  ███   ▄███    ███    ███     ▄█    ███  
+//  ████████▀    ▀██████▀   ████████▀     ██████████   ▄████████▀
+
 // lorem ipsum shortcode
 
 function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
@@ -1228,6 +1254,75 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 		$text .= '</p>';
 	}
 	return $text;
+}
+
+// toc shortcode
+
+function bc_toc_render($content, $post) {
+	$html = '<div id="toc-' . $post->post_name . '" class="toc">';
+		$html .= '<div class="toc-title"><p>Table of Contents</p></div>';
+
+	$dom = new DOMDocument();
+	libxml_use_internal_errors(true);
+	if (!$dom->loadHTML('<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body id="BCTOC">' . $content . '</body></html>')) {
+		return 'parse error';
+	}
+	libxml_clear_errors();
+
+	$xpath = new DOMXPath($dom);
+
+	$headings = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
+
+	if (!empty($headings)) {
+		foreach ($headings as $heading) {
+			$id = sanitize_title($heading->textContent);
+			$tag = $heading->tagName;
+			$html .= '<' . $tag . ' class="toc-heading"><a href="#' . $id . '">' . $heading->textContent . '</a></' . $tag . '>';
+			//$html .= '<p>' . $tag . '</p>';
+		}
+	}
+
+	return $html . '</div>';
+}
+
+function bc_toc_shortcode($atts = [], $content = null, $tag = '') {
+	global $bc_page_content, $post;
+
+	return bc_toc_render($bc_page_content, $post);
+}
+
+function bc_fetch_page_content() {
+	global $post, $bc_page_content;
+
+	if (is_singular('page')) {
+		$page = get_post($post->ID);
+
+		$bc_page_content = apply_filters('the_content', $page->post_content);
+	}
+}
+
+function bc_heading_ids($content) {
+	$content = preg_replace_callback('/<h([1-6])(.*?)>(.*?)<\/h\1>/i', function ($matches) {
+		$tag = strtolower($matches[1]);
+		$attributes = $matches[2];
+		$heading_text = strip_tags($matches[3]);
+		$id = sanitize_title($heading_text);
+
+		$original_class = '';
+		if (preg_match('/class=[\'"]([^\'"]+)[\'"]/', $attributes, $class_matches)) {
+			$original_class = $class_matches[1];
+		}
+
+		$original_id = null;
+        if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
+            $original_id = $id_matches[1];
+        }
+
+        return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
+
+	}, $content);
+
+	return $content;
 }
 
 // form shortcode
@@ -1698,6 +1793,10 @@ if (!class_exists('WPU')) {
 //  ███   ███    ███  ███       ███      
 //  █▀     ▀█    █▀   █▀       ▄████▀
 
+// oh the humanity
+
+global $bc_page_content;
+
 define('_BC', _bcSettings::get_settings());
 
 add_action('admin_enqueue_scripts', 'bc_add_scripts');
@@ -1727,7 +1826,6 @@ if (_BC['bc_cleaning'] == 'yes') {
 	remove_action('admin_print_scripts', 'print_emoji_detection_script');
 	remove_action('admin_print_styles', 'print_emoji_styles');
 	remove_action('template_redirect', 'rest_output_link_header', 11, 0);
-
 	add_filter('show_admin_bar', '__return_false');
 	add_filter('wp_calculate_image_srcset', '__return_false');
 	add_filter('widget_text', 'shortcode_unautop');
@@ -1740,11 +1838,9 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
-
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
-
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
 }
 
@@ -1782,7 +1878,6 @@ if (_BC['bc_nocat'] == 'yes') {
 	add_action('created_category', 'bc_no_category_base_refresh_rules');
 	add_action('delete_category', 'bc_no_category_base_refresh_rules');
 	add_action('edited_category', 'bc_no_category_base_refresh_rules');
-
 	add_filter('category_rewrite_rules', 'bc_no_category_base_rewrite_rules');
 	add_filter('query_vars', 'bc_no_category_base_query_vars');
 	add_filter('request', 'bc_no_category_base_request');
@@ -1815,7 +1910,6 @@ if (_BC['bc_views'] == 'yes') {
 		add_action('manage_posts_custom_column', 'bc_posts_custom_column_views', 5, 2);
 		add_action('manage_pages_custom_column', 'bc_pages_custom_column_views', 5, 2);
 		add_action('pre_get_posts', 'bc_sort_custom_column_query');
-
 		add_filter('manage_posts_columns', 'bc_posts_column_views');
 		add_filter('manage_pages_columns', 'bc_pages_column_views');
 		add_filter('manage_edit-post_sortable_columns', 'bc_set_posts_sortable_columns');
@@ -1827,12 +1921,17 @@ if (_BC['bc_views'] == 'yes') {
 
 if (_BC['bc_htaccess'] == 'yes') {
 	add_action('admin_init', 'bc_flush_htaccess');
-
 	add_filter('mod_rewrite_rules', 'bc_output_htaccess');
 }
 
-if (_BC['bc_shortcodes'] == 'yes') {
+if (_BC['bc_shortcode_lorem'] == 'yes') {
 	add_shortcode('lorem', 'bc_lorem_shortcode');
+}
+
+if (_BC['bc_shortcode_toc'] == 'yes') {
+	add_action('wp', 'bc_fetch_page_content');
+	add_filter('the_content', 'bc_heading_ids', 99);
+	add_shortcode('toc', 'bc_toc_shortcode');
 }
 
 if (_BC['bc_feeds'] != 'default') {
@@ -1849,7 +1948,6 @@ if (_BC['bc_feeds'] != 'default') {
 if (_BC['bc_form_active'] == 'yes') {
 	add_action('wp_ajax_contact_form_action', 'bc_contact_form_callback');
 	add_action('wp_ajax_nopriv_contact_form_action', 'bc_contact_form_callback');
-
 	add_shortcode('form', 'bc_form_shortcode');
 }
 
