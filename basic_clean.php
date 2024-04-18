@@ -1129,7 +1129,7 @@ function bc_og_meta() {
 	$image = (has_post_thumbnail($id)) ? explode('/', wp_get_attachment_url(get_post_thumbnail_id($id))) : [''];
 
 	if (is_page() || is_singular('post')) {
-		$description = bc_excerpt(get_the_content_feed(), 20) . '&hellip';
+		$description = get_the_excerpt();
 	}
 	else {
 		$description = get_bloginfo('description');		
@@ -1150,10 +1150,6 @@ function bc_og_meta() {
 	foreach ($tags as $p => $c) {
 		echo "\t" . '<meta property="og:' . $p . '" content="' . $c . '">' . "\n";
 	}
-}
-
-function bc_excerpt($content, $count) {
-	return implode(' ', array_slice(explode(' ', trim(preg_replace ('/<[^>]*>/', ' ', $content))), 0, $count));
 }
 
 // clean nav items
@@ -1967,22 +1963,18 @@ if (is_admin()) {
 	}
 }
 
-// init updater
-
-if (get_option('auth_key') !== '') {
-	$updater = new WPU(__FILE__);
-	$updater->set_versions('6.4', '6.4.3');
-	$updater->set_username('nullstep');
-	$updater->set_repository('basic_clean');
-	$updater->authorize(get_option('auth_key'));
-	$updater->initialize();
-}
-
 // boot plugin
 
-add_action('init', function() {
-	if (is_admin()) {
-		new _bcMenu(_URL_BASIC_CLEAN);
+add_action('admin_init', function() {
+	new _bcMenu(_URL_BASIC_CLEAN);
+
+	if (get_option('auth_key') !== '') {
+		$updater = new WPU(__FILE__);
+		$updater->set_versions('6.4', '6.4.3');
+		$updater->set_username('nullstep');
+		$updater->set_repository('basic_clean');
+		$updater->authorize(get_option('auth_key'));
+		$updater->initialize();
 	}
 });
 
