@@ -1965,16 +1965,18 @@ if (is_admin()) {
 
 // boot plugin
 
-add_action('admin_init', function() {
-	new _bcMenu(_URL_BASIC_CLEAN);
+add_action('init', function() {
+	if (is_admin()) {
+		new _bcMenu(_URL_BASIC_CLEAN);
 
-	if (get_option('auth_key') !== '') {
-		$updater = new WPU(__FILE__);
-		$updater->set_versions('6.4', '6.4.3');
-		$updater->set_username('nullstep');
-		$updater->set_repository('basic_clean');
-		$updater->authorize(get_option('auth_key'));
-		$updater->initialize();
+		if (get_option('auth_key') !== '') {
+			$updater = new WPU(__FILE__);
+			$updater->set_versions('6.4', '6.4.3');
+			$updater->set_username('nullstep');
+			$updater->set_repository('basic_clean');
+			$updater->authorize(get_option('auth_key'));
+			$updater->initialize();
+		}		
 	}
 });
 
