@@ -99,10 +99,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
-	'bc_shortcode_toc' => [
-		'type' => 'string',
-		'default' => 'no'
-	],
 	'bc_cache' => [
 		'type' => 'string',
 		'default' => '86400'
@@ -244,10 +240,6 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_shortcode_lorem' => [
 				'label' => 'Lorem Shortcode Active',
-				'type' => 'check'
-			],
-			'bc_shortcode_toc' => [
-				'label' => 'TOC Shortcode Active',
 				'type' => 'check'
 			],
 			'bc_cache' => [
@@ -1247,78 +1239,9 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 			$text = rtrim($text, ', ') . '. ';
 			$first = 0;
 		}
-		$text .= '</p>';
+		$text = rtrim($text, ' ') . '</p>';
 	}
-	return $text;
-}
-
-// toc shortcode
-
-function bc_toc_render($content, $post) {
-	$html = '<div id="toc-' . $post->post_name . '" class="toc">';
-		$html .= '<div class="toc-title"><p>Table of Contents</p></div>';
-
-	$dom = new DOMDocument();
-	libxml_use_internal_errors(true);
-	if (!$dom->loadHTML('<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body id="BCTOC">' . $content . '</body></html>')) {
-		return 'parse error';
-	}
-	libxml_clear_errors();
-
-	$xpath = new DOMXPath($dom);
-
-	$headings = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
-
-	if (!empty($headings)) {
-		foreach ($headings as $heading) {
-			$id = sanitize_title($heading->textContent);
-			$tag = $heading->tagName;
-			$html .= '<' . $tag . ' class="toc-heading"><a href="#' . $id . '">' . $heading->textContent . '</a></' . $tag . '>';
-			//$html .= '<p>' . $tag . '</p>';
-		}
-	}
-
-	return $html . '</div>';
-}
-
-function bc_toc_shortcode($atts = [], $content = null, $tag = '') {
-	global $bc_page_content, $post;
-
-	return bc_toc_render($bc_page_content, $post);
-}
-
-function bc_fetch_page_content() {
-	global $post, $bc_page_content;
-
-	if (is_singular('page')) {
-		$page = get_post($post->ID);
-
-		$bc_page_content = apply_filters('the_content', $page->post_content);
-	}
-}
-
-function bc_heading_ids($content) {
-	$content = preg_replace_callback('/<h([1-6])(.*?)>(.*?)<\/h\1>/i', function ($matches) {
-		$tag = strtolower($matches[1]);
-		$attributes = $matches[2];
-		$heading_text = strip_tags($matches[3]);
-		$id = sanitize_title($heading_text);
-
-		$original_class = '';
-		if (preg_match('/class=[\'"]([^\'"]+)[\'"]/', $attributes, $class_matches)) {
-			$original_class = $class_matches[1];
-		}
-
-		$original_id = null;
-        if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
-            $original_id = $id_matches[1];
-        }
-
-        return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
-
-	}, $content);
-
-	return $content;
+	return substr($text, 3, -4);
 }
 
 // form shortcode
@@ -1835,6 +1758,7 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
+	remove_filter('the_content', 'wpautop');
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
@@ -1922,12 +1846,6 @@ if (_BC['bc_htaccess'] == 'yes') {
 
 if (_BC['bc_shortcode_lorem'] == 'yes') {
 	add_shortcode('lorem', 'bc_lorem_shortcode');
-}
-
-if (_BC['bc_shortcode_toc'] == 'yes') {
-	add_action('wp', 'bc_fetch_page_content');
-	add_filter('the_content', 'bc_heading_ids', 99);
-	add_shortcode('toc', 'bc_toc_shortcode');
 }
 
 if (_BC['bc_feeds'] != 'default') {
