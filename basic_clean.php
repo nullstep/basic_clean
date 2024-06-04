@@ -1954,6 +1954,7 @@ if (_BC['bc_mail_log'] == 'yes') {
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 
 // set up admin ajax
+// and boot plugin
 
 if (is_admin()) {
 	if (count(_AJAX_BASIC_CLEAN)) {
@@ -1961,11 +1962,7 @@ if (is_admin()) {
 			add_action('wp_ajax_' . $ajax, 'bc_ajax');
 		}
 	}
-}
 
-// boot plugin
-
-add_action('admin_init', function() {
 	new _bcMenu(_URL_BASIC_CLEAN);
 
 	if (get_option('auth_key') !== '') {
@@ -1976,7 +1973,8 @@ add_action('admin_init', function() {
 		$updater->authorize(get_option('auth_key'));
 		$updater->initialize();
 	}
-});
+}
+
 
 add_action('rest_api_init', function() {
 	_bcSettings::args();
