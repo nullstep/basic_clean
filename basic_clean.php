@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.2.7
+ * Version: 1.3.0
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -854,6 +854,128 @@ class _bcLogin {
 //  ███    █▄   ███    ███  ███    ███    ███    █▄   
 //  ███    ███  ███    ███  ███   ▄███    ███    ███  
 //  ████████▀    ▀██████▀   ████████▀     ██████████
+
+// duplicate page/post
+
+function bc_duplicate_post_link($actions, $post) {
+	$post_status = 'draft';
+
+	if (current_user_can('edit_posts')) {
+		$actions['duplicate'] = isset($post) ? '<a href="admin.php?action=bc_duplicate_post_as_draft&amp;post=' . intval($post->ID) . '&amp;nonce=' . wp_create_nonce('bc-duplicate-page-' . intval($post->ID) ) . '" title="' . 'Duplicate this as ' . $post_status . '" rel="permalink">' . 'Duplicate This' . '</a>' : '';
+	}
+
+	return $actions;
+}
+
+function bc_duplicate_post_as_draft() {
+	$nonce = sanitize_text_field($_REQUEST['nonce']);
+	$post_id = (isset($_GET['post']) ? intval($_GET['post']) : intval($_POST['post']));
+	$post = get_post($post_id);
+	$current_user_id = get_current_user_id();
+
+	if (wp_verify_nonce($nonce, 'b-duplicate-page-' . $post_id)) {
+		if (current_user_can('manage_options') || current_user_can('edit_others_posts')) {
+			bc_duplicate_edit_post($post_id);
+		}
+		else if (current_user_can('contributor') && $current_user_id == $post->post_author) {
+			bc_duplicate_edit_post($post_id, 'pending');
+		}
+		else if (current_user_can('edit_posts') && $current_user_id == $post->post_author) {
+			bc_duplicate_edit_post($post_id);
+		}
+		else {
+			wp_die('Unauthorized Access.');
+		}
+	}
+	else {
+		wp_die('Security check issue, Please try again.');
+	} 
+}
+
+function bc_duplicate_edit_post($post_id, $post_status_update = '') {
+	global $wpdb;
+
+	if ($post_status_update == '') {
+		$post_status = 'draft';
+	}
+	else {
+		$post_status =  $post_status_update;
+	}
+
+	$redirect_it = 'to_page';
+
+	if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action']) && 'bc_duplicate_post_as_draft' == sanitize_text_field($_REQUEST['action'])))) {
+		wp_die('No post to duplicate has been supplied!');
+	}
+
+	$return_page = '';            
+	$post = get_post($post_id);
+	$current_user = wp_get_current_user();
+	$new_post_author = $current_user->ID; // or $post->post_author;
+
+	if (isset($post) && $post != null) {
+		$args = [
+			'comment_status' => $post->comment_status,
+			'ping_status' => $post->ping_status,
+			'post_author' => $new_post_author,
+			'post_content' => wp_slash($post->post_content),
+			'post_excerpt' => $post->post_excerpt,
+			'post_parent' => $post->post_parent,
+			'post_password' => $post->post_password,
+			'post_status' => $post_status,
+			'post_title' => $post->post_title,
+			'post_type' => $post->post_type,
+			'to_ping' => $post->to_ping,
+			'menu_order' => $post->menu_order
+		];
+
+		$new_post_id = wp_insert_post($args);
+
+		if (is_wp_error($new_post_id)) {
+			wp_die($new_post_id->get_error_message());
+		}
+
+		$taxonomies = array_map('sanitize_text_field', get_object_taxonomies($post->post_type));
+
+		if (!empty($taxonomies) && is_array($taxonomies)) {
+			foreach ($taxonomies as $taxonomy) {
+				$post_terms = wp_get_object_terms($post_id, $taxonomy, ['fields' => 'slugs']);
+				wp_set_object_terms($new_post_id, $post_terms, $taxonomy, false);
+			}
+		}
+
+		$post_meta_keys = get_post_custom_keys($post_id);
+
+		if (!empty($post_meta_keys)) {
+			foreach ($post_meta_keys as $meta_key) {
+				$meta_values = get_post_custom_values($meta_key, $post_id);
+				foreach ($meta_values as $meta_value) {
+					$meta_value = maybe_unserialize($meta_value);
+					update_post_meta($new_post_id, $meta_key, wp_slash($meta_value));
+				}
+			}
+		}
+
+		if ($post->post_type != 'post') {
+			$return_page = '?post_type=' . $post->post_type;
+		}
+
+		if (!empty($redirect_it) && $redirect_it == 'to_list') {
+			wp_redirect(esc_url_raw(admin_url('edit.php' . $return_page)));
+		}
+		elseif (!empty($redirect_it) && $redirect_it == 'to_page') {
+			wp_redirect(esc_url_raw(admin_url('post.php?action=edit&post=' . $new_post_id))); 
+		}
+		else {
+			wp_redirect(esc_url_raw(admin_url('edit.php' . $return_page)));
+		}
+
+		exit;
+	} 
+	else {
+		wp_die('Error! Post creation failed, could not find original post: ' . $post_id);
+	}
+}
 
 function bc_debug() {
 	$debug = print_r(error_get_last(), true);
@@ -1834,11 +1956,14 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
+	add_filter('post_row_actions', 'bc_duplicate_post_link', 10, 2);
+	add_filter('page_row_actions', 'bc_duplicate_post_link', 10, 2);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
+	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
 }
 
 if (_BC['bc_global'] == 'yes') {
@@ -1955,12 +2080,8 @@ if (_BC['bc_mail_log'] == 'yes') {
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 
 // set up admin ajax
-<<<<<<< HEAD
 // menu, updater, and
 // then boot plugin
-=======
-// and boot plugin
->>>>>>> origin/main
 
 if (is_admin()) {
 	if (count(_AJAX_BASIC_CLEAN)) {
@@ -1968,7 +2089,6 @@ if (is_admin()) {
 			add_action('wp_ajax_' . $ajax, 'bc_ajax');
 		}
 	}
-<<<<<<< HEAD
 
 	new _bcMenu(_URL_BASIC_CLEAN);
 }
@@ -1981,30 +2101,8 @@ add_action('admin_init', function() {
 		$updater->set_repository('basic_clean');
 		$updater->authorize(get_option('auth_key'));
 		$updater->initialize();
-=======
-
-<<<<<<< HEAD
-	new _bcMenu(_URL_BASIC_CLEAN);
-=======
-// boot plugin
-
-add_action('init', function() {
-	if (is_admin()) {
-		new _bcMenu(_URL_BASIC_CLEAN);
->>>>>>> origin/main
-
-		if (get_option('auth_key') !== '') {
-			$updater = new WPU(__FILE__);
-			$updater->set_versions('6.4', '6.4.3');
-			$updater->set_username('nullstep');
-			$updater->set_repository('basic_clean');
-			$updater->authorize(get_option('auth_key'));
-			$updater->initialize();
-		}		
->>>>>>> origin/main
 	}
-}
-
+});
 
 add_action('rest_api_init', function() {
 	_bcSettings::args();
