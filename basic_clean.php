@@ -99,6 +99,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
+	'bc_shortcode_toc' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
 	'bc_cache' => [
 		'type' => 'string',
 		'default' => '86400'
@@ -240,6 +244,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_shortcode_lorem' => [
 				'label' => 'Lorem Shortcode Active',
+				'type' => 'check'
+			],
+			'bc_shortcode_toc' => [
+				'label' => 'TOC Shortcode Active',
 				'type' => 'check'
 			],
 			'bc_cache' => [
@@ -546,6 +554,7 @@ class _bcMenu {
 
 	public function render_admin() {
 		wp_enqueue_media();
+		wp_enqueue_code_editor(['type' => 'application/x-httpd-php']);
 		$this->enqueue_assets();
 
 		$name = _PLUGIN_BASIC_CLEAN;
@@ -1197,128 +1206,6 @@ function bc_login_logo() {
 	}
 }
 
-// duplicate page/post
-
-function bc_duplicate_post_link($actions, $post) {
-	$post_status = 'draft';
-
-	if (current_user_can('edit_posts')) {
-		$actions['duplicate'] = isset($post) ? '<a href="admin.php?action=bc_duplicate_post_as_draft&amp;post=' . intval($post->ID) . '&amp;nonce=' . wp_create_nonce('bc-duplicate-page-' . intval($post->ID) ) . '" title="' . 'Duplicate this as ' . $post_status . '" rel="permalink">' . 'Duplicate This' . '</a>' : '';
-	}
-
-	return $actions;
-}
-
-function bc_duplicate_post_as_draft() {
-	$nonce = sanitize_text_field($_REQUEST['nonce']);
-	$post_id = (isset($_GET['post']) ? intval($_GET['post']) : intval($_POST['post']));
-	$post = get_post($post_id);
-	$current_user_id = get_current_user_id();
-
-	if (wp_verify_nonce($nonce, 'b-duplicate-page-' . $post_id)) {
-		if (current_user_can('manage_options') || current_user_can('edit_others_posts')) {
-			bc_duplicate_edit_post($post_id);
-		}
-		else if (current_user_can('contributor') && $current_user_id == $post->post_author) {
-			bc_duplicate_edit_post($post_id, 'pending');
-		}
-		else if (current_user_can('edit_posts') && $current_user_id == $post->post_author) {
-			bc_duplicate_edit_post($post_id);
-		}
-		else {
-			wp_die('Unauthorized Access.');
-		}
-	}
-	else {
-		wp_die('Security check issue, Please try again.');
-	} 
-}
-
-function bc_duplicate_edit_post($post_id, $post_status_update = '') {
-	global $wpdb;
-
-	if ($post_status_update == '') {
-		$post_status = 'draft';
-	}
-	else {
-		$post_status =  $post_status_update;
-	}
-
-	$redirect_it = 'to_page';
-
-	if (!(isset($_GET['post']) || isset($_POST['post']) || (isset($_REQUEST['action']) && 'bc_duplicate_post_as_draft' == sanitize_text_field($_REQUEST['action'])))) {
-		wp_die('No post to duplicate has been supplied!');
-	}
-
-	$return_page = '';            
-	$post = get_post($post_id);
-	$current_user = wp_get_current_user();
-	$new_post_author = $current_user->ID; // or $post->post_author;
-
-	if (isset($post) && $post != null) {
-		$args = [
-			'comment_status' => $post->comment_status,
-			'ping_status' => $post->ping_status,
-			'post_author' => $new_post_author,
-			'post_content' => wp_slash($post->post_content),
-			'post_excerpt' => $post->post_excerpt,
-			'post_parent' => $post->post_parent,
-			'post_password' => $post->post_password,
-			'post_status' => $post_status,
-			'post_title' => $post->post_title,
-			'post_type' => $post->post_type,
-			'to_ping' => $post->to_ping,
-			'menu_order' => $post->menu_order
-		];
-
-		$new_post_id = wp_insert_post($args);
-
-		if (is_wp_error($new_post_id)) {
-			wp_die($new_post_id->get_error_message());
-		}
-
-		$taxonomies = array_map('sanitize_text_field', get_object_taxonomies($post->post_type));
-
-		if (!empty($taxonomies) && is_array($taxonomies)) {
-			foreach ($taxonomies as $taxonomy) {
-				$post_terms = wp_get_object_terms($post_id, $taxonomy, ['fields' => 'slugs']);
-				wp_set_object_terms($new_post_id, $post_terms, $taxonomy, false);
-			}
-		}
-
-		$post_meta_keys = get_post_custom_keys($post_id);
-
-		if (!empty($post_meta_keys)) {
-			foreach ($post_meta_keys as $meta_key) {
-				$meta_values = get_post_custom_values($meta_key, $post_id);
-				foreach ($meta_values as $meta_value) {
-					$meta_value = maybe_unserialize($meta_value);
-					update_post_meta($new_post_id, $meta_key, wp_slash($meta_value));
-				}
-			}
-		}
-
-		if ($post->post_type != 'post') {
-			$return_page = '?post_type=' . $post->post_type;
-		}
-
-		if (!empty($redirect_it) && $redirect_it == 'to_list') {
-			wp_redirect(esc_url_raw(admin_url('edit.php' . $return_page)));
-		}
-		elseif (!empty($redirect_it) && $redirect_it == 'to_page') {
-			wp_redirect(esc_url_raw(admin_url('post.php?action=edit&post=' . $new_post_id))); 
-		}
-		else {
-			wp_redirect(esc_url_raw(admin_url('edit.php' . $return_page)));
-		}
-
-		exit;
-	} 
-	else {
-		wp_die('Error! Post creation failed, could not find original post: ' . $post_id);
-	}
-}
-
 //     ▄████████     ▄█    █▄      ▄██████▄      ▄████████      ███      
 //    ███    ███    ███    ███    ███    ███    ███    ███  ▀█████████▄  
 //    ███    █▀     ███    ███    ███    ███    ███    ███     ▀███▀▀██  
@@ -1361,9 +1248,78 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 			$text = rtrim($text, ', ') . '. ';
 			$first = 0;
 		}
-		$text = rtrim($text, ' ') . '</p>';
+		$text .= '</p>';
 	}
-	return substr($text, 3, -4);
+	return $text;
+}
+
+// toc shortcode
+
+function bc_toc_render($content, $post) {
+	$html = '<div id="toc-' . $post->post_name . '" class="toc">';
+		$html .= '<div class="toc-title"><p>Table of Contents</p></div>';
+
+	$dom = new DOMDocument();
+	libxml_use_internal_errors(true);
+	if (!$dom->loadHTML('<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body id="BCTOC">' . $content . '</body></html>')) {
+		return 'parse error';
+	}
+	libxml_clear_errors();
+
+	$xpath = new DOMXPath($dom);
+
+	$headings = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
+
+	if (!empty($headings)) {
+		foreach ($headings as $heading) {
+			$id = sanitize_title($heading->textContent);
+			$tag = $heading->tagName;
+			$html .= '<' . $tag . ' class="toc-heading"><a href="#' . $id . '">' . $heading->textContent . '</a></' . $tag . '>';
+			//$html .= '<p>' . $tag . '</p>';
+		}
+	}
+
+	return $html . '</div>';
+}
+
+function bc_toc_shortcode($atts = [], $content = null, $tag = '') {
+	global $bc_page_content, $post;
+
+	return bc_toc_render($bc_page_content, $post);
+}
+
+function bc_fetch_page_content() {
+	global $post, $bc_page_content;
+
+	if (is_singular('page')) {
+		$page = get_post($post->ID);
+
+		$bc_page_content = apply_filters('the_content', $page->post_content);
+	}
+}
+
+function bc_heading_ids($content) {
+	$content = preg_replace_callback('/<h([1-6])(.*?)>(.*?)<\/h\1>/i', function ($matches) {
+		$tag = strtolower($matches[1]);
+		$attributes = $matches[2];
+		$heading_text = strip_tags($matches[3]);
+		$id = sanitize_title($heading_text);
+
+		$original_class = '';
+		if (preg_match('/class=[\'"]([^\'"]+)[\'"]/', $attributes, $class_matches)) {
+			$original_class = $class_matches[1];
+		}
+
+		$original_id = null;
+        if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
+            $original_id = $id_matches[1];
+        }
+
+        return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
+
+	}, $content);
+
+	return $content;
 }
 
 // form shortcode
@@ -1427,7 +1383,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 			$html .= '<div class="mb-3">';
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
-			$html .= wp_nonce_field('contact_form_action', '_acf_nonce', true, false);
+			$html .= wp_nonce_field('contact_form_action', '_bc_nonce', true, false);
 			$html .= '<input class="btn btn-primary" id="contact-button" type="button" value="Send">';
 			$html .= '</div>';
 
@@ -1449,7 +1405,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 // contact form post handler
 
 function bc_contact_form_callback() {
-	if (!wp_verify_nonce($_POST['_acf_nonce'], $_POST['action'])) {
+	if (!wp_verify_nonce($_POST['_bc_nonce'], $_POST['action'])) {
 		$error = 'verification error, try again.';
 	}
 	else {
@@ -1879,14 +1835,10 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
-	add_filter('post_row_actions', 'bc_duplicate_post_link', 10, 2);
-	add_filter('page_row_actions', 'bc_duplicate_post_link', 10, 2);
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
-	remove_filter('the_content', 'wpautop');
 	remove_filter('the_excerpt', 'wpautop');
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
-	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
 }
 
 if (_BC['bc_global'] == 'yes') {
@@ -1973,6 +1925,12 @@ if (_BC['bc_shortcode_lorem'] == 'yes') {
 	add_shortcode('lorem', 'bc_lorem_shortcode');
 }
 
+if (_BC['bc_shortcode_toc'] == 'yes') {
+	add_action('wp', 'bc_fetch_page_content');
+	add_filter('the_content', 'bc_heading_ids', 99);
+	add_shortcode('toc', 'bc_toc_shortcode');
+}
+
 if (_BC['bc_feeds'] != 'default') {
 	$feed = _BC['bc_feeds'] . '_feed';
 	add_action('do_feed', $feed, 1);
@@ -1997,6 +1955,8 @@ if (_BC['bc_mail_log'] == 'yes') {
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 
 // set up admin ajax
+// menu, updater, and
+// then boot plugin
 
 if (is_admin()) {
 	if (count(_AJAX_BASIC_CLEAN)) {
@@ -2004,22 +1964,18 @@ if (is_admin()) {
 			add_action('wp_ajax_' . $ajax, 'bc_ajax');
 		}
 	}
+
+	new _bcMenu(_URL_BASIC_CLEAN);
 }
 
-// boot plugin
-
-add_action('init', function() {
-	if (is_admin()) {
-		new _bcMenu(_URL_BASIC_CLEAN);
-
-		if (get_option('auth_key') !== '') {
-			$updater = new WPU(__FILE__);
-			$updater->set_versions('6.4', '6.4.3');
-			$updater->set_username('nullstep');
-			$updater->set_repository('basic_clean');
-			$updater->authorize(get_option('auth_key'));
-			$updater->initialize();
-		}		
+add_action('admin_init', function() {
+	if (get_option('auth_key') !== '') {
+		$updater = new WPU(__FILE__);
+		$updater->set_versions('6.4', '6.4.3');
+		$updater->set_username('nullstep');
+		$updater->set_repository('basic_clean');
+		$updater->authorize(get_option('auth_key'));
+		$updater->initialize();
 	}
 });
 

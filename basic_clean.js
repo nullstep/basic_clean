@@ -19,7 +19,7 @@ jQuery(function($) {
 		'bc_mimes',
 		'bc_unfiltered',
 		'bc_views',
-		'bc_shortcode_lorem',,
+		'bc_shortcode_lorem',
 		'bc_cache',
 		'bc_sitemap',
 		'bc_ogmeta',
@@ -34,6 +34,7 @@ jQuery(function($) {
 		'bc_mail_log'
 	];
 	const editors = [
+		'bc_form_json'
 	];
 	// let's go
 	var cm = [];
