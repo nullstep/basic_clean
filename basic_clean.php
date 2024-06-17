@@ -2083,24 +2083,24 @@ remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 // menu, updater, and
 // then boot plugin
 
-if (is_admin()) {
-	if (count(_AJAX_BASIC_CLEAN)) {
-		foreach (_AJAX_BASIC_CLEAN as $ajax) {
-			add_action('wp_ajax_' . $ajax, 'bc_ajax');
+add_action('init', function() {
+	if (is_admin()) {
+		if (count(_AJAX_BASIC_CLEAN)) {
+			foreach (_AJAX_BASIC_CLEAN as $ajax) {
+				add_action('wp_ajax_' . $ajax, 'bc_ajax');
+			}
 		}
-	}
 
-	new _bcMenu(_URL_BASIC_CLEAN);
-}
+		new _bcMenu(_URL_BASIC_CLEAN);
 
-add_action('admin_init', function() {
-	if (get_option('auth_key') !== '') {
-		$updater = new WPU(__FILE__);
-		$updater->set_versions('6.4', '6.4.3');
-		$updater->set_username('nullstep');
-		$updater->set_repository('basic_clean');
-		$updater->authorize(get_option('auth_key'));
-		$updater->initialize();
+		if (get_option('auth_key') !== '') {
+			$updater = new WPU(__FILE__);
+			$updater->set_versions('6.4', '6.4.3');
+			$updater->set_username('nullstep');
+			$updater->set_repository('basic_clean');
+			$updater->authorize(get_option('auth_key'));
+			$updater->initialize();
+		}
 	}
 });
 
