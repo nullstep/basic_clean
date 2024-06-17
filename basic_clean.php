@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.0
+ * Version: 1.3.4
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
