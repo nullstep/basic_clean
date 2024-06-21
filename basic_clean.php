@@ -136,6 +136,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
+	'bc_dashboard' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
 
 	'bc_form_json' => [
 		'type' => 'string',
@@ -286,6 +290,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_blocks' => [
 				'label' => 'Remove Block Styles',
+				'type' => 'check'
+			],
+			'bc_dashboard' => [
+				'label' => 'Remove WP Dashboard Widgets',
 				'type' => 'check'
 			]
 		]
@@ -1122,6 +1130,23 @@ function bc_set_wp_options() {
 	update_option('use_smilies', 0);
 	update_option('default_pingback_flag', 0);
 	update_option('show_avatars', 0);
+}
+
+// wp dashboard
+
+function bc_remove_dashboard_widgets() {
+	global $wp_meta_boxes;
+   
+	unset($wp_meta_boxes['dashboard']['side']['core']['dashboard_quick_press']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_welcome']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_site_health']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_activity']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_right_now']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_plugins']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_recent_drafts']);
+	unset($wp_meta_boxes['dashboard']['normal']['core']['dashboard_recent_comments']);
+	unset($wp_meta_boxes['dashboard']['side']['core']['dashboard_primary']);
+	unset($wp_meta_boxes['dashboard']['side']['core']['dashboard_secondary']);
 }
 
 // no category base
@@ -2075,6 +2100,10 @@ if (_BC['bc_form_active'] == 'yes') {
 
 if (_BC['bc_mail_log'] == 'yes') {
 	add_action('wp_mail_failed', 'bc_mail_error', 10, 1);
+}
+
+if (_BC['bc_dashboard'] == 'yes') {
+	add_action('wp_dashboard_setup', 'bc_remove_dashboard_widgets');
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
