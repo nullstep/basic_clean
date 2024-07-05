@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.4
+ * Version: 1.3.5
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -91,9 +91,17 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => ''
 	],
-	'bc_views' => [
+	'bc_cols' => [
 		'type' => 'string',
 		'default' => 'yes'
+	],
+	'bc_comments' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_debug' => [
+		'type' => 'string',
+		'default' => 'no'
 	],
 	'bc_shortcode_lorem' => [
 		'type' => 'string',
@@ -242,8 +250,16 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Allow Unfiltered Uploads',
 				'type' => 'check'
 			],
-			'bc_views' => [
-				'label' => 'Show Page/Post Views',
+			'bc_cols' => [
+				'label' => 'Show Extra Page/Post Columns',
+				'type' => 'check'
+			],
+			'bc_comments' => [
+				'label' => 'Allow Comments',
+				'type' => 'check'
+			],
+			'bc_debug' => [
+				'label' => 'Show Last PHP Error Notice',
 				'type' => 'check'
 			],
 			'bc_shortcode_lorem' => [
@@ -1029,33 +1045,51 @@ function bc_set_views($id) {
 	}
 }
 
-function bc_posts_column_views($defaults) {
-	if (get_post_type(get_the_ID()) == 'post') {
+function bc_get_post_type() {
+	global $post, $typenow, $current_screen;
+	
+	if ($post && $post->post_type) {
+		return $post->post_type;
+	}
+	
+	elseif ($typenow) {
+		return $typenow;
+	}
+	
+	elseif ($current_screen && $current_screen->post_type) {
+		return $current_screen->post_type;
+	}
+	
+	elseif (isset($_REQUEST['post_type'])) {
+		return sanitize_key($_REQUEST['post_type']);
+	}
+	
+	return null;
+}
+
+function bc_column_list($defaults) {
+	if (in_array(bc_get_post_type(), ['post', 'page'])) {
 		unset($defaults['date']);
 		$defaults['post_views'] = 'Views';
+		$defaults['url'] = 'URL';
 		$defaults['date'] = 'Date';
 	}
 	return $defaults;
 }
 
-function bc_posts_custom_column_views($column_name, $id) {
-	if (get_post_type(get_the_ID()) == 'post') {
-		if ($column_name === 'post_views') {
-			bc_get_views(get_the_ID());
+function bc_custom_column_list($column_name, $id) {
+	if (in_array(get_post_type($id), ['post', 'page'])) {
+		switch ($column_name) {
+			case 'post_views': {
+				bc_get_views($id);
+				break;
+			}
+			case 'url': {
+				$url = get_the_permalink($id);
+				echo '<a href="' . $url . '" target="_blank">' . parse_url($url)['path'] . '</a>';
+				break;
+			}
 		}
-	}
-}
-
-function bc_pages_column_views($defaults) {
-	unset($defaults['date']);
-	$defaults['page_views'] = 'Views';
-	$defaults['date'] = 'Date';
-	return $defaults;
-}
-
-function bc_pages_custom_column_views($column_name, $id) {
-	if ($column_name === 'page_views') {
-		bc_get_views(get_the_ID());
 	}
 }
 
@@ -1353,6 +1387,52 @@ function bc_login_logo() {
 	}
 }
 
+// remove all commenting functions
+
+function bc_remove_commenting() {
+	global $pagenow;
+
+	if ($pagenow === 'edit-comments.php') {
+		wp_safe_redirect(site_url());
+		exit;
+	}
+
+	foreach (get_post_types() as $post_type) {
+		if (post_type_supports($post_type, 'comments')) {
+			remove_post_type_support($post_type, 'comments');
+			remove_post_type_support($post_type, 'trackbacks');
+		}
+	}
+
+	add_filter('comments_open', '__return_false', 20, 2);
+	add_filter('pings_open', '__return_false', 20, 2);
+	add_filter('comments_array', '__return_empty_array', 10, 2);
+
+	if (is_admin()) {
+		remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
+		remove_menu_page('edit-comments.php');
+	}
+
+	if (is_admin_bar_showing()) {
+		remove_action('admin_bar_menu', 'wp_admin_bar_comments_menu', 60);
+	}
+}
+
+// admin notice - php error
+
+function bc_admin_notice_error() {
+	$e = error_get_last();
+
+	if ($e) {
+		echo '<div class="notice notice-error is-dismissible">';
+			echo '<pre>';
+				print_r($e);
+			echo '</pre>';
+		echo '</div>';
+		echo '<style>.php-error #adminmenuback,.php-error #adminmenuwrap{margin-top:0;}</style>';
+	}
+}
+
 //     ▄████████     ▄█    █▄      ▄██████▄      ▄████████      ███      
 //    ███    ███    ███    ███    ███    ███    ███    ███  ▀█████████▄  
 //    ███    █▀     ███    ███    ███    ███    ███    ███     ▀███▀▀██  
@@ -1463,11 +1543,11 @@ function bc_heading_ids($content) {
 		}
 
 		$original_id = null;
-        if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
-            $original_id = $id_matches[1];
-        }
+		if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
+			$original_id = $id_matches[1];
+		}
 
-        return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
+		return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
 
 	}, $content);
 
@@ -2055,20 +2135,24 @@ if (_BC['bc_unfiltered'] == 'yes') {
 	add_filter('init', 'bc_unfiltered_upload');
 }
 
-if (_BC['bc_views'] == 'yes') {
+if (_BC['bc_cols'] == 'yes') {
 	add_action('wp', 'bc_view_count');
 
 	if (is_admin()) {
-		add_action('manage_posts_custom_column', 'bc_posts_custom_column_views', 5, 2);
-		add_action('manage_pages_custom_column', 'bc_pages_custom_column_views', 5, 2);
+		add_action('manage_posts_custom_column', 'bc_custom_column_list', 5, 2);
+		add_action('manage_pages_custom_column', 'bc_custom_column_list', 5, 2);
 		add_action('pre_get_posts', 'bc_sort_custom_column_query');
-		add_filter('manage_posts_columns', 'bc_posts_column_views');
-		add_filter('manage_pages_columns', 'bc_pages_column_views');
+		add_filter('manage_posts_columns', 'bc_column_list');
+		add_filter('manage_pages_columns', 'bc_column_list');
 		add_filter('manage_edit-post_sortable_columns', 'bc_set_posts_sortable_columns');
 		add_filter('manage_edit-page_sortable_columns', 'bc_set_pages_sortable_columns');
 		add_filter('attachment_fields_to_edit', 'bc_media_downloads', 10, 2);
 		add_filter('attachment_fields_to_save', 'bc_media_downloads_save', 10, 2);
 	}
+}
+
+if (_BC['bc_comments'] == 'no') {
+	add_action('admin_init', 'bc_remove_commenting');
 }
 
 if (_BC['bc_htaccess'] == 'yes') {
@@ -2109,6 +2193,10 @@ if (_BC['bc_mail_log'] == 'yes') {
 
 if (_BC['bc_dashboard'] == 'yes') {
 	add_action('wp_dashboard_setup', 'bc_remove_dashboard_widgets');
+}
+
+if (_BC['bc_debug'] == 'yes') {
+	add_action('admin_notices', 'bc_admin_notice_error');
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
