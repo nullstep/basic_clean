@@ -1337,7 +1337,11 @@ function bc_og_meta() {
 // clean nav items
 
 function bc_nav_attributes_filter($var) {
-	return is_array($var) ? array_intersect($var, ['current-menu-item', 'nav-item']) : '';
+	return is_array($var) ? array_intersect($var, [
+		'current-menu-item',
+		'nav-item',
+		'dropdown'
+	]) : '';
 }
 
 // add admin scripts
