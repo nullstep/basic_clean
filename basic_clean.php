@@ -1570,7 +1570,12 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 
 		if (array_key_exists($index, $forms)) {
 			$form = $forms[$index];
+
+			$html .= '<div class="alert alert-success alert-dismissible fade text-center" role="alert" id="contact-msg"></div>';
+
 			$html .= '<form id="' . $index . '-form">';
+
+			$placeholders = $form['placeholders'];
 
 			foreach ($form['rows'] as $row) {
 				$html .= '<div class="row">';
@@ -1587,22 +1592,36 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 							$html .= '</div>';
 						}
 						else {
-							$name = str_replace(' ', '_', strtolower($field['label']));
-							$req = ($field['required'] == 'yes') ? 'f ' : '';
+							$name = str_replace([' ', '?'], ['_', ''], strtolower($field['label']));
+							$req = ($field['required'] == 'yes') ? ' required' : '';
+							$label = $field['text'] ?? $field['label'];
+							$placeholder = ($placeholders) ? $field['label'] : '';
+
 							$html .= '<div class="mb-3">';
-							$html .= '<label for="' . $name . '" class="form-label">' . $field['label'] . (($req) ? ' *' : '') . '</label>';
+							$html .= '<label for="' . $name . '" class="form-label">' . $label . (($req) ? ' *' : '') . '</label>';
 
 							switch ($field['type']) {
 								case 'textarea': {
-									$html .= '<textarea maxlength="2000" id="' . $name . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '"></textarea>';
+									$html .= '<textarea maxlength="2000" id="' . $name . '" class="form-control" name="' . $name . '" placeholder="' . $placeholder . '"' . $req . '></textarea>';
 									break;
 								}
 								case 'checkbox': {
-									$html .= '<input id="' . $name . '" type="checkbox" class="' . $req . 'form-check-input" name="' . $name . '">';
+									$html .= '<br><input id="' . $name . '" type="checkbox" class="form-check-input" name="' . $name . '"' . $req . '>';
+									break;
+								}
+								case 'select': {
+									$html .= '<select id="' . $name . '" type="' . $field['type'] . '" class="form-control" name="' . $name . '"' . $req . '>';
+										$html .= '<option value="">Please Select&hellip;</option>';
+										if (isset($field['options'])) {
+											foreach ($field['options'] as $value => $option) {
+												$html .= '<option value="' . $value . '">' . $option . '</option>';
+											}
+										}
+									$html .= '</select>';
 									break;
 								}
 								default: {
-									$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="' . $req . 'form-control" name="' . $name . '" placeholder="' . $field['label'] . '">';
+									$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="form-control" name="' . $name . '" placeholder="' . $placeholder . '"' . $req . '>';
 								}
 							}
 
@@ -1620,18 +1639,18 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 			$html .= '<input type="hidden" name="action" value="contact_form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
 			$html .= wp_nonce_field('contact_form_action', '_bc_nonce', true, false);
-			$html .= '<input class="btn btn-primary" id="contact-button" type="button" value="Send">';
+			$html .= '<input class="btn btn-primary" id="contact-button" type="submit" value="Send">';
 			$html .= '</div>';
 
 			if ($m) {
-				$html .= '<p class="req-field">* indicates a required field</p>';
+				$html .= '<p class="req-field">* <i>indicates a required field</i></p>';
 			}
 			$html .= '</form>';
-			$html .= '<div id="contact-msg"></div>';
 
 			$url = admin_url('admin-ajax.php');
 
-			$html .= '<script>document.addEventListener("DOMContentLoaded",function(){$(function(){$("form").on("click","#contact-button",function(){var f=$("#' . $index . '-form");var m=$("#contact-msg");m.text("...");var ne = $(".f").filter(function(){return this.value!="";});if(ne.length==0){m.text("Please complete all the required fields.");return false;}else{$.ajax({type:"POST",url:"' . $url . '",data:f.serialize(),dataType:"json",success:function(res){if(res.status=="success"){f[0].reset();}m.text(res.errmessage);}});}});});});</script>';
+			$html .= '<script>document.getElementById("' . $index . '-form").addEventListener("submit",function(event){
+			event.preventDefault();if(this.checkValidity()){let m=$("#contact-msg");m.text("...");let f=$("#' . $index . '-form");$.ajax({type:"POST",url:"' . $url . '",data:f.serialize(),dataType:"json",success:function(res){if(res.status=="success"){f[0].reset();}m.text(res.message).addClass("show");}});}else{alert("form error");}});</script>';
 		}
 	}
 
@@ -1657,7 +1676,7 @@ function bc_contact_form_callback() {
 
 						if ($field['type'] != 'title') {
 							$sane = '';
-							$name = str_replace(' ', '_', strtolower($field['label']));
+							$name = str_replace([' ', '?'], ['_', ''], strtolower($field['label']));
 
 							switch ($field['type']) {
 								case 'email': {
@@ -1699,17 +1718,17 @@ function bc_contact_form_callback() {
 
 		if (wp_mail($to, $subject, $message, $header)) {
 			$status = 'success';
-			$error = $sendmsg;
+			$message = $sendmsg;
 		}
 		else {
 			$status = 'failed';
-			$error = 'error(s)';
+			$message = 'error(s)';
 		}
 	}
 
 	$json = [
 		'status' => $status,
-		'errmessage' => $error
+		'message' => $message
 	];
 	
 	header('Content-Type: application/json');
