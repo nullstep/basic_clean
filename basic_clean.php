@@ -1297,6 +1297,7 @@ function bc_remove_classic_styles() {
 
 function bc_remove_block_styles() {
 	wp_dequeue_style('wp-block-library');
+	wp_dequeue_style('core-block-supports');
 }
 
 function bc_remove_thumbnail_dimensions($html){
