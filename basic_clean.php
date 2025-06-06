@@ -1576,7 +1576,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 
 			$html .= '<form id="' . $index . '-form">';
 
-			$placeholders = $form['placeholders'];
+			$placeholders = $form['placeholders'] ?? false;
 
 			foreach ($form['rows'] as $row) {
 				$html .= '<div class="row">';
