@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.5
+ * Version: 1.3.6
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -49,7 +49,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-
 	'bc_gid' => [
 		'type' => 'string',
 		'default' => ''
@@ -58,7 +57,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => '5'
 	],
-
 	'bc_logo' => [
 		'type' => 'string',
 		'default' => ''
@@ -123,7 +121,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-
 	'bc_cleaning' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -140,6 +137,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
+	'bc_core_block' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
 	'bc_blocks' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -148,7 +149,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
-
 	'bc_form_json' => [
 		'type' => 'string',
 		'default' => json_encode(
@@ -164,7 +164,6 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],	
-
 	'bc_random_text' => [
 		'type' => 'string',
 		'default' => _WORDS_BASIC_CLEAN
@@ -302,6 +301,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_classic' => [
 				'label' => 'Remove Classic Styles',
+				'type' => 'check'
+			],
+			'bc_core_block' => [
+				'label' => 'Remove Core Block Supports Styles',
 				'type' => 'check'
 			],
 			'bc_blocks' => [
@@ -1988,6 +1991,12 @@ if (_BC['bc_mimes'] == 'yes') {
 
 if (_BC['bc_unfiltered'] == 'yes') {
 	add_filter('init', 'bc_unfiltered_upload');
+}
+
+if (_BC['bc_core_block'] == 'yes') {
+	add_action('wp_footer', function() {
+		wp_dequeue_style('core-block-supports');
+	});
 }
 
 if (_BC['bc_cols'] == 'yes') {

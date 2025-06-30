@@ -30,6 +30,7 @@ jQuery(function($) {
 		'bc_htaccess',
 		'bc_global',
 		'bc_classic',
+		'bc_core_block',
 		'bc_blocks',
 		'bc_dashboard',
 		'bc_random_text',
