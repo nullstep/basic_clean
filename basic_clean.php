@@ -1258,7 +1258,9 @@ function bc_add_mime_types($mimes) {
 // unfiltered uploads
 
 function bc_unfiltered_upload($caps) {
-	define('ALLOW_UNFILTERED_UPLOADS', true);
+	if (!defined('ALLOW_UNFILTERED_UPLOADS')) {
+		define('ALLOW_UNFILTERED_UPLOADS', true);
+	}
 }
 
 // handle content
