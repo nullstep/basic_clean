@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.6
+ * Version: 1.3.7
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -128,6 +128,50 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_htaccess' => [
 		'type' => 'string',
 		'default' => 'yes'
+	],
+	'bc_fa' => [
+		'type' => 'string',
+		'default' => 'none'
+	],
+	'bc_fa_load' => [
+		'type' => 'string',
+		'default' => 'public'
+	],
+	'bc_fab' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fal' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_far' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fas' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fat' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fasl' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fasr' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fass' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_fad' => [
+		'type' => 'string',
+		'default' => 'no'
 	],
 	'bc_global' => [
 		'type' => 'string',
@@ -279,6 +323,66 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_ogmeta' => [
 				'label' => 'OpenGraph Meta Tags',
+				'type' => 'check'
+			]
+		]
+	],
+	'fonts' => [
+		'label' => 'Fonts',
+		'columns' => 4,
+		'fields' => [
+			'bc_fa' => [
+				'label' => 'Font Awesome',
+				'type' => 'select',
+				'values' => [
+					'none' => 'None',
+					'free' => 'Free',
+					'pro' => 'Pro'
+				]
+			],
+			'bc_fa_load' => [
+				'label' => 'Where',
+				'type' => 'select',
+				'values' => [
+					'public' => 'Public',
+					'admin' => 'Admin',
+					'both' => 'Both'
+				]
+			],
+			'bc_fab' => [
+				'label' => 'Brands',
+				'type' => 'check'
+			],
+			'bc_fal' => [
+				'label' => 'Light',
+				'type' => 'check'
+			],
+			'bc_far' => [
+				'label' => 'Regular',
+				'type' => 'check'
+			],
+			'bc_fas' => [
+				'label' => 'Solid',
+				'type' => 'check'
+			],
+			'bc_fat' => [
+				'label' => 'Thin',
+				'type' => 'check'
+			]
+			'bc_fasl' => [
+				'label' => 'Sharp Light',
+				'type' => 'check'
+			],
+			'bc_fasr' => [
+				'label' => 'Sharp Regular',
+				'type' => 'check'
+			],
+			'bc_fass' => [
+				'label' => 'Sharp Solid',
+				'type' => 'check'
+			],
+			'bc_fad' => [
+				'label' => 'Duotone',
 				'type' => 'check'
 			]
 		]
@@ -1148,6 +1252,55 @@ function bc_google_code() {
 <?php
 }
 
+// font awesome
+
+function bc_font_awesome() {
+	switch (_BC['bc_fa']) {
+		case 'free': {
+			if (_BC['bc_fab'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css">';
+			}
+			if (_BC['bc_far'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/regular.min.css">';
+			}
+			if (_BC['bc_fas'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css">';
+			}
+			break;
+		}
+		case 'pro': {
+			if (_BC['bc_fab'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/brands.min.css">' . "\n";
+			}
+			if (_BC['bc_fal'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/light.min.css">' . "\n";
+			}
+			if (_BC['bc_far'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/regular.min.css">' . "\n";
+			}
+			if (_BC['bc_fas'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/solid.min.css">' . "\n";
+			}
+			if (_BC['bc_fat'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/thin.min.css">' . "\n";
+			}
+			if (_BC['bc_fasl'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/sharp-light.min.css">' . "\n";
+			}
+			if (_BC['bc_fasr'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/sharp-regular.min.css">' . "\n";
+			}
+			if (_BC['bc_fass'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/sharp-solid.min.css">' . "\n";
+			}
+			if (_BC['bc_fad'] == 'yes') {
+				echo "\t" . '<link rel="stylesheet" href="/fonts/duotone.min.css">' . "\n";
+			}
+			break;
+		}
+	}
+}
+
 // mail error log
 
 function bc_mail_error($wp_error) {
@@ -1747,6 +1900,10 @@ function bc_output_htaccess($rules) {
 	$plugin = _PLUGIN_BASIC_CLEAN;
 	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
 
+	if (_BC['bc_fa'] != 'none') {
+		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts [L]\n";
+	}
+
 	if (_BC['bc_sitemap'] == 'yes') {
 		$new_rules .= "RewriteRule ^sitemap\.xml$ /wp-content/plugins/{$plugin}/index.php?file=sitemap [L]\n";
 	}
@@ -1987,6 +2144,10 @@ if (_BC['bc_gid'] != '') {
 	add_action('wp_head', 'bc_google_code', 0);
 }
 
+if (_BC['bc_fa'] != 'none') {
+	add_action('wp_head', 'bc_font_awesome', 0);
+}
+
 if (_BC['bc_mimes'] == 'yes') {
 	add_filter('upload_mimes', 'bc_add_mime_types');
 }
@@ -2068,8 +2229,8 @@ if (_BC['bc_debug'] == 'yes') {
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 
 // set up admin ajax
-// menu, updater, and
-// then boot plugin
+// menu, and then
+// boot plugin
 
 add_action('init', function() {
 	if (is_admin()) {
