@@ -39,6 +39,7 @@ jQuery(function($) {
 		'bc_fasr',
 		'bc_fass',
 		'bc_fad',
+		'bc_cookies',
 		'bc_global',
 		'bc_classic',
 		'bc_core_block',

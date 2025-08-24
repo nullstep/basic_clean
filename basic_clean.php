@@ -173,6 +173,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
+	'bc_cookies' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
 	'bc_global' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -248,6 +252,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_position' => [
 				'label' => 'Show in Main Admin Menu',
+				'type' => 'check'
+			],
+			'bc_cookies' => [
+				'label' => 'Cookie Consent Active',
 				'type' => 'check'
 			]
 		]
@@ -368,7 +376,7 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_fat' => [
 				'label' => 'Thin',
 				'type' => 'check'
-			]
+			],
 			'bc_fasl' => [
 				'label' => 'Sharp Light',
 				'type' => 'check'
@@ -1301,6 +1309,48 @@ function bc_font_awesome() {
 	}
 }
 
+// consent cookie
+
+function bc_cookie_scripts() {
+	$consent = $_COOKIE['user_consent'] ?? 'no';
+
+	if ($consent == 'yes') {
+?>
+	<script>console.log('loading non-essential scripts');</script>
+<?php
+	} 
+}
+
+function bc_cookie_consent() {
+	if (!isset($_COOKIE['user_consent'])) {
+?>
+	<div id="cookie-box">
+		<p>This site uses cookies. Here is our <a href="/privacy-policy">privacy/cookie policy</a>. This explains the difference between essential and non-essential cookies, and lists the non-essential ones and their uses. Would you like to allow non-essential cookies on this site? You can change your mind by clicking the cookie icon in the bottom right corner of the page any time.</p>
+		<button onclick="bcc('yes')">Yes</button>
+		<button onclick="bcc('no')">No</button>			
+	</div>
+	<script>
+		function bcc(c) {
+			document.cookie = 'user_consent=' + c + '; path=/; max-age=' + (31536000);
+			location.reload();
+		}
+	</script>
+<?php
+	}
+	else {
+		if ($_COOKIE['user_consent'] == 'yes') {
+?>
+	<div id="cookie-icon">yes</div>
+<?php
+		}
+		else {
+?>
+	<div id="cookie-icon">no</div>
+<?php
+		}
+	}
+}
+
 // mail error log
 
 function bc_mail_error($wp_error) {
@@ -1901,7 +1951,7 @@ function bc_output_htaccess($rules) {
 	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
 
 	if (_BC['bc_fa'] != 'none') {
-		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts [L]\n";
+		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts/$1 [L]\n";
 	}
 
 	if (_BC['bc_sitemap'] == 'yes') {
@@ -2091,6 +2141,7 @@ if (_BC['bc_cleaning'] == 'yes') {
 	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
 	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
+	add_filter('wp_speculation_rules_configuration', '__return_null');
 }
 
 if (_BC['bc_global'] == 'yes') {
@@ -2224,6 +2275,11 @@ if (_BC['bc_dashboard'] == 'yes') {
 
 if (_BC['bc_debug'] == 'yes') {
 	add_action('admin_notices', 'bc_admin_notice_error');
+}
+
+if (_BC['bc_cookies'] == 'yes') {
+	add_action('wp_head', 'bc_cookie_scripts');
+	add_action('wp_footer', 'bc_cookie_consent');
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
