@@ -7,7 +7,7 @@ jQuery(function($) {
 	const fields = [
 		'bc_ignore',
 		'bc_position',
-		'bc_gid',
+		'bc_analytics',
 		'bc_indent',
 		'bc_logo',
 		'bc_feeds',
@@ -40,6 +40,7 @@ jQuery(function($) {
 		'bc_fass',
 		'bc_fad',
 		'bc_cookies',
+		'bc_cookie_style',
 		'bc_global',
 		'bc_classic',
 		'bc_core_block',
@@ -51,6 +52,7 @@ jQuery(function($) {
 		'bc_mail_log'
 	];
 	const editors = [
+		'bc_analytics',
 		'bc_form_json'
 	];
 	// let's go

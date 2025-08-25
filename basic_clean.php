@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.7
+ * Version: 1.3.8
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -38,9 +38,19 @@ define('_FORM_BASIC_CLEAN', '
 	{"default":{"send_to":["' . get_option('admin_email') . '"],"success_msg":"Thanks","rows":[{"cols":[{"class":"col-md-6","fields":[{"label":"First Name","type":"input","required":"yes"},{"label":"Last Name","type":"input","required":"no"}]},{"class":"col-md-6","fields":[{"label":"Email","type":"input","required":"yes"},{"label":"Telephone","type":"input","required":"no"}]}]},{"cols":[{"class":"col-md-12","fields":[{"label":"Message","type":"textarea","required":"yes"}]}]}]}}
 ');
 
+// cookie icon
+
+define('_COOKIE_BASIC_CLEAN', '<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><path fill="#222222" d="M242.11 27.12c14.72-.82 29.55-.51 44.15 1.63 9.87 1.7 15.64 13.71 11.07 22.57-7.05 14.84-4.5 33.6 6.45 45.88 3.51 4.45 9.19 7.05 11.41 12.49 1.64 3.58 1.53 7.64.67 11.42-3.12 15.79-.04 32.78 8.71 46.33 12.12 19.53 35.38 31.58 58.37 29.71 5.66-.83 11.79.81 15.55 5.3 4.34 5.14 9.61 9.56 15.79 12.32 13.09 6.09 29.3 4.92 41.25-3.24 3.33-2.4 7.15-4.49 11.39-4.31 7.54-.11 14.54 5.85 15.65 13.31 6.79 43.4.87 88.76-17.15 128.85-15.33 34.4-39.32 64.89-69.12 87.92-31.28 24.36-69.01 40.36-108.3 45.77-49.5 7.06-101.25-2.66-144.7-27.42-29.83-16.85-55.8-40.48-75.4-68.57-20.83-29.75-34.42-64.53-39.16-100.54-4.72-35.3-1.2-71.7 10.48-105.36C59.2 122.56 104.18 73.13 160.54 47.51c25.6-11.79 53.43-18.71 81.57-20.39m-43.64 89.64c-5.8 1.44-10.55 6.4-11.68 12.28-2.17 8.98 5.07 18.51 14.2 19.15 9.11 1.11 17.85-7.03 17.45-16.18.13-9.92-10.39-18.07-19.97-15.25m33.94 65.68c-12.77 3.52-21.39 17.53-18.6 30.53 2.31 14.03 17.22 24.26 31.15 21.21 14.43-2.34 24.72-18.01 21-32.18-2.94-14.55-19.42-24.2-33.55-19.56m-96.94 47.21c-6.81 1.29-12.3 7.45-12.74 14.37-.99 8.77 6.59 17.14 15.34 17.3 8.88.56 17.06-7.52 16.58-16.4.01-9.55-9.84-17.51-19.18-15.27m123 63.94c-7.66 1.24-13.65 8.7-13.11 16.47.15 8.5 8.19 15.81 16.67 15.25 8.74-.18 16.2-8.59 15.24-17.31-.55-9.06-9.86-16.32-18.8-14.41m90.87.97c-8.49 2.62-15.4 9.75-17.7 18.33-3.26 11.1 1.78 23.87 11.71 29.78 10.65 6.9 25.97 4.51 34.1-5.2 7.57-8.47 8.68-21.87 2.57-31.45-6.07-10.22-19.4-15.21-30.68-11.46M190.4 347.58c-11.58 2.95-20.23 14.42-19.71 26.39.07 11.91 9.15 22.93 20.79 25.37 9.92 2.34 20.95-1.68 27.04-9.86 5.89-7.57 7.13-18.41 3.1-27.12-5-11.66-19.01-18.31-31.22-14.78Z"/></svg>');
+
+define('_COOKIE_STYLES_BASIC_CLEAN', '#cookie-box.bar{position:fixed;bottom:0;width:100%;background:rgb(0 0 0 / .4);color:#fff;text-align:center;z-index:9999;div{padding:15px;max-width:75%;margin-inline:auto}}#cookie-box.box{position:fixed;bottom:30px;right:30px;width:400px;border-radius:12px;background:rgb(0 0 0 / .4);color:#fff;text-align:center;z-index:9999;div{padding:15px}}#cookie-box.modal{position:fixed;display:flex;justify-content:center;align-items:center;top:0;left:0;bottom:0;right:0;background:rgb(0 0 0 / .8);z-index:9999;div{padding:15px;max-width:400px;border-radius:12px;background:rgb(255 255 255 / .7);color:#222;text-align:center}}#cookie-box{button{padding:5px 20px;margin:5px 10px;border:0;border-radius:99px;color:#fff}button.yes{background:var(--primary-colour,#58cf39)}button.no{background:#d90000}button:hover{box-shadow:inset 0 0 0 10em rgb(255 255 255 / .3)}}#cookie-icon{position:fixed;bottom:30px;right:30px;svg{width:48px;height:48px}svg:hover{fill:var(--primary-colour,#666666)}}');
+
 // basic_clean args
 
 define('_ARGS_BASIC_CLEAN', [
+	'bc_analytics' => [
+		'type' => 'string',
+		'default' => ''
+	],
 	'bc_ignore' => [
 		'type' => 'string',
 		'default' => ''
@@ -48,10 +58,6 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_position' => [
 		'type' => 'string',
 		'default' => 'yes'
-	],
-	'bc_gid' => [
-		'type' => 'string',
-		'default' => ''
 	],
 	'bc_indent' => [
 		'type' => 'string',
@@ -177,6 +183,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
+	'bc_cookie_style' => [
+		'type' => 'string',
+		'default' => 'bar'
+	],
 	'bc_global' => [
 		'type' => 'string',
 		'default' => 'yes'
@@ -232,8 +242,12 @@ define('_AJAX_BASIC_CLEAN', [
 define('_ADMIN_BASIC_CLEAN', [
 	'options' => [
 		'label' => 'Options',
-		'columns' => 2,
+		'columns' => 3,
 		'fields' => [
+			'bc_analytics' => [
+				'label' => 'Analytics/Tracking Code',
+				'type' => 'code'
+			],
 			'bc_ignore' => [
 				'label' => 'IP Addresses to Ignore for Page View Count',
 				'type' => 'text'
@@ -242,20 +256,25 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Text Generator Source',
 				'type' => 'text'
 			],
-			'bc_gid' => [
-				'label' => 'Google Analytics ID',
-				'type' => 'input'
-			],
 			'bc_indent' => [
 				'label' => 'Tab Indents',
 				'type' => 'input'
 			],
-			'bc_position' => [
-				'label' => 'Show in Main Admin Menu',
-				'type' => 'check'
-			],
 			'bc_cookies' => [
 				'label' => 'Cookie Consent Active',
+				'type' => 'check'
+			],
+			'bc_cookie_style' => [
+				'label' => 'Cookie Consent Style',
+				'type' => 'select',
+				'values' => [
+					'bar' => 'Bar',
+					'box' => 'Box',
+					'modal' => 'Modal'
+				]
+			],
+			'bc_position' => [
+				'label' => 'Show in Main Admin Menu',
 				'type' => 'check'
 			]
 		]
@@ -1244,22 +1263,6 @@ function bc_sort_custom_column_query($query) {
 	}
 }
 
-// google analytics code
-
-function bc_google_code() {
-?>
-	<script async src="https://www.googletagmanager.com/gtag/js?id=<?php echo _BC['bc_gid']; ?>"></script>
-	<script>
-		window.dataLayer = window.dataLayer || [];
-		function gtag() {
-			dataLayer.push(arguments);
-		}
-		gtag('js', new Date());
-		gtag('config', '<?php echo _BC['bc_gid']; ?>');
-	</script>
-<?php
-}
-
 // font awesome
 
 function bc_font_awesome() {
@@ -1313,42 +1316,53 @@ function bc_font_awesome() {
 
 function bc_cookie_scripts() {
 	$consent = $_COOKIE['user_consent'] ?? 'no';
+	echo '<style>' . _COOKIE_STYLES_BASIC_CLEAN . '</style>' . "\n";
 
 	if ($consent == 'yes') {
-?>
-	<script>console.log('loading non-essential scripts');</script>
-<?php
-	} 
+		echo _BC['bc_analytics'] . "\n";
+	}
+	else {
+		echo "\t" . '<!-- no consent -->' . "\n";
+	}
 }
 
 function bc_cookie_consent() {
+	$class = _BC['bc_cookie_style'];
+
 	if (!isset($_COOKIE['user_consent'])) {
-?>
-	<div id="cookie-box">
-		<p>This site uses cookies. Here is our <a href="/privacy-policy">privacy/cookie policy</a>. This explains the difference between essential and non-essential cookies, and lists the non-essential ones and their uses. Would you like to allow non-essential cookies on this site? You can change your mind by clicking the cookie icon in the bottom right corner of the page any time.</p>
-		<button onclick="bcc('yes')">Yes</button>
-		<button onclick="bcc('no')">No</button>			
+		$text = apply_filters('bc_cookie_text', '<p>This site uses cookies. Here is our <a href="/privacy-policy">privacy/cookie policy</a>. This explains the difference between essential and non-essential cookies, and lists the non-essential ones and their uses. Would you like to allow non-essential cookies on this site? You can change your mind by clicking the cookie icon in the bottom right corner of the page any time.</p>');
+		$cookie = <<<HTML
+	<div id="cookie-box" class="{$class}">
+		<div>
+			{$text}
+			<button class="yes" onclick="bcc('yes')">Yes</button>
+			<button class="no" onclick="bcc('no')">No</button>
+		</div>
 	</div>
 	<script>
 		function bcc(c) {
-			document.cookie = 'user_consent=' + c + '; path=/; max-age=' + (31536000);
+			document.cookie = 'user_consent=' + c + '; path=/; max-age=' + (31536000) + ';';
 			location.reload();
 		}
 	</script>
-<?php
+HTML;
 	}
 	else {
-		if ($_COOKIE['user_consent'] == 'yes') {
-?>
-	<div id="cookie-icon">yes</div>
-<?php
+		$icon = apply_filters('bc_cookie_icon', _COOKIE_BASIC_CLEAN);
+		$cookie = <<<HTML
+	<div id="cookie-icon">
+		<a href="#" onclick="bcc()">{$icon}</a>
+	</div>
+	<script>
+		function bcc() {
+			document.cookie = 'user_consent=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;';
+			location.reload();
 		}
-		else {
-?>
-	<div id="cookie-icon">no</div>
-<?php
-		}
+	</script>
+HTML;
 	}
+
+	echo $cookie;
 }
 
 // mail error log
@@ -2189,10 +2203,6 @@ if (_BC['bc_logo'] != '') {
 
 if ((_BC['bc_login'] != '') && (_BC['bc_path'] != '')) {
 	new _bcLogin();
-}
-
-if (_BC['bc_gid'] != '') {
-	add_action('wp_head', 'bc_google_code', 0);
 }
 
 if (_BC['bc_fa'] != 'none') {
