@@ -6,6 +6,7 @@ jQuery(function($) {
 	const plugin = basic_clean;
 	const fields = [
 		'bc_ignore',
+		'bc_duplicate',
 		'bc_position',
 		'bc_analytics',
 		'bc_indent',
@@ -46,6 +47,7 @@ jQuery(function($) {
 		'bc_core_block',
 		'bc_blocks',
 		'bc_dashboard',
+		'bc_folders',
 		'bc_random_text',
 		'bc_form_json',
 		'bc_form_active',

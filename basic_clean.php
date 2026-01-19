@@ -6,7 +6,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.8
+ * Version: 1.3.11
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -56,6 +56,10 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_ignore' => [
 		'type' => 'string',
 		'default' => ''
+	],
+	'bc_duplicate' => [
+		'type' => 'string',
+		'default' => 'no'
 	],
 	'bc_position' => [
 		'type' => 'string',
@@ -209,6 +213,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'yes'
 	],
+	'bc_folders' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
 	'bc_form_json' => [
 		'type' => 'string',
 		'default' => json_encode(
@@ -277,6 +285,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_position' => [
 				'label' => 'Show in Main Admin Menu',
+				'type' => 'check'
+			],
+			'bc_duplicate' => [
+				'label' => 'Add "Duplicate Post" feature',
 				'type' => 'check'
 			]
 		]
@@ -353,7 +365,11 @@ define('_ADMIN_BASIC_CLEAN', [
 			'bc_ogmeta' => [
 				'label' => 'OpenGraph Meta Tags',
 				'type' => 'check'
-			]
+			],
+			'bc_folders' => [
+				'label' => 'Use Media Folders',
+				'type' => 'check'
+			],
 		]
 	],
 	'fonts' => [
@@ -700,6 +716,16 @@ class _bcMenu {
 			'api' => [
 				'url' => esc_url_raw(rest_url(_PLUGIN_BASIC_CLEAN . '-api/v1/' . _APIPATH_BASIC_CLEAN)),
 				'nonce' => wp_create_nonce('wp_rest')
+			],
+			'folders' => [
+				[
+					'term_id' => -1,
+					'term_name' => 'All Folders'
+				],
+				[
+					'term_id' => 0,
+					'term_name' => 'Uncategorized'
+				]
 			]
 		]);
 	}
@@ -1015,6 +1041,27 @@ class _bcLogin {
 //  ███    ███  ███    ███  ███   ▄███    ███    ███  
 //  ████████▀    ▀██████▀   ████████▀     ██████████
 
+// creates a random password of $count length
+// avoiding ambigious characters like 1Il etc.
+
+function bc_passwd($count) {
+	$chars = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+	$nums = '23456789';
+	$pass = '';
+
+	for ($x = 0; $x < $count; $x++) {
+		$type = random_int(0, 2);
+		if ($type == 2) {
+			$pass .= $nums[random_int(0, strlen($nums) - 1)];
+		}
+		else {
+			$pass .= $chars[random_int(0, strlen($chars) - 1)];
+		}
+	}
+
+	return $pass;
+}
+
 // duplicate page/post
 
 function bc_duplicate_post_link($actions, $post) {
@@ -1282,6 +1329,8 @@ function bc_font_awesome() {
 			break;
 		}
 		case 'pro': {
+			echo "\t" . '<link rel="stylesheet" href="/fonts/fontawesome.min.css">' . "\n";
+
 			if (_BC['bc_fab'] == 'yes') {
 				echo "\t" . '<link rel="stylesheet" href="/fonts/brands.min.css">' . "\n";
 			}
@@ -1576,6 +1625,107 @@ function bc_add_scripts($hook) {
 
 	if ($screen == null) {
 		return;
+	}
+
+	if (_BC['bc_folders'] == 'yes') {
+		wp_register_script('js-footer', '', ['jquery', 'media-editor'], '', true);
+		wp_enqueue_script('js-footer');
+
+		// add in our folder panel to the media modal
+
+		$js = <<<JS
+		jQuery(document).ready(function($) {
+			Window.bwpf = function() {
+				var f = $('#folder-column');
+				var h = $('<h1>Folders</h1>').css({
+					'display': 'inline-block',
+					'margin-right': '5px',
+					'font-size': '23px',
+					'font-weight': 400,
+					'padding': '9px 0 4px'
+				});
+				f.append(h);
+				var t = $('<div class="media-toolbar wp-filter"></div>').css({
+					'margin-top': '3px',
+					'height': '54px'
+				});
+				f.append(t);
+			};
+
+			if (typeof wp !== 'undefined' && wp.media) {
+				wp.media.view.Modal.prototype.on('open', function() {
+					setTimeout(function() {
+						var f = $('.media-modal-content');
+						if (!f.find('#folder-column').length && !f.find('.edit-attachment-frame').length) {
+							var c = $('<div id="folder-column"></div>').css({
+								'width': '160px',
+								'background': '#f1f1f1',
+								'padding-inline': '10px',
+								'position': 'absolute',
+								'top': 0,
+								'bottom': 0,
+								'left': 0,
+								'z-index': 1000,
+								'overflow-y': 'auto',
+								'border-right': '1px solid #dcdcde'
+							});
+
+							f.append(c);
+							$('.media-frame').css({
+								'margin-left': '180px',
+								'width': 'calc(100% - 180px)'
+							});
+
+							Window.bwpf();
+						}					
+					}, 100);
+				});
+			}
+		});
+JS;
+
+		wp_add_inline_script('js-footer', $js);
+
+		// add in folder panel for upload page
+
+		if ($screen->base == 'upload') {
+			$js = <<<JS
+			jQuery(document).ready(function($) {
+				var gl = setInterval(function() {
+					var gw = $('.wp-filter');
+
+					if (gw.length && !$('#wpcontent').hasClass('has-folder-column')) {
+						$('#wpcontent').addClass('has-folder-column');
+						$('#wpcontent').css('position', 'relative');
+
+						var c = $('<div id="folder-column"></div>').css({
+							'width': '160px',
+							'background': '#f1f1f1',
+							'padding-inline': '10px',
+							'position': 'absolute',
+							'top': 0,
+							'bottom': 0,
+							'left': 0,
+							'z-index': 10,
+							'overflow-y': 'auto'
+						});
+
+						$('#wpcontent').prepend(c);
+
+						$('#wpbody-content').css({
+							'margin-left': '180px',
+							'width': 'calc(100% - 180px)'
+						});
+
+						clearInterval(gl);
+						Window.bwpf();
+					}
+				}, 200);
+			});
+JS;
+
+			wp_add_inline_script('js-footer', $js);
+		}
 	}
 
 	if ((_BC['bc_position'] == 'yes') && ($screen->base !== 'toplevel_page_' . _PLUGIN_BASIC_CLEAN . '-menu')) {
@@ -2148,8 +2298,6 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('nav_menu_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('nav_menu_item_id', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
-	add_filter('post_row_actions', 'bc_duplicate_post_link', 10, 2);
-	add_filter('page_row_actions', 'bc_duplicate_post_link', 10, 2);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
 	add_filter('wp_img_tag_add_auto_sizes', '__return_false');
 	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
@@ -2158,6 +2306,11 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_action('widgets_init', 'bc_remove_recent_comments_style');
 	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
 	add_filter('wp_speculation_rules_configuration', '__return_null');
+}
+
+if (_BC['bc_duplicate'] == 'yes') {
+	add_filter('post_row_actions', 'bc_duplicate_post_link', 10, 2);
+	add_filter('page_row_actions', 'bc_duplicate_post_link', 10, 2);
 }
 
 if (_BC['bc_global'] == 'yes') {
@@ -2208,7 +2361,13 @@ if ((_BC['bc_login'] != '') && (_BC['bc_path'] != '')) {
 }
 
 if (_BC['bc_fa'] != 'none') {
-	add_action('wp_head', 'bc_font_awesome', 0);
+	if (in_array(_BC['bc_fa_load'], ['public', 'both'])) {
+		add_action('wp_head', 'bc_font_awesome', 0);
+	}
+
+	if (in_array(_BC['bc_fa_load'], ['admin', 'both'])) {
+		add_action('admin_head', 'bc_font_awesome', 0);
+	}
 }
 
 if (_BC['bc_mimes'] == 'yes') {
