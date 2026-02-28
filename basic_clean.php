@@ -2,7 +2,8 @@
 
 /*
  * Plugin Name: basic_clean
- * Plugin URI: https://nullstep.com/wp-plugins
+ * Plugin URI: https://xayrin.com
+ * Update URI: https://api.xayr.in/wp/basic_clean.json
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
@@ -17,6 +18,7 @@ define('_PLUGIN_BASIC_CLEAN', 'basic_clean');
 
 define('_URL_BASIC_CLEAN', plugin_dir_url(__FILE__));
 define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
+
 
 //   ▄████████   ▄██████▄   ███▄▄▄▄▄       ▄████████  
 //  ███    ███  ███    ███  ███▀▀▀▀██▄    ███    ███  
@@ -538,6 +540,7 @@ define('_API_BASIC_CLEAN', [
 	]
 ]);
 
+
 //     ▄████████     ▄███████▄   ▄█   
 //    ███    ███    ███    ███  ███   
 //    ███    ███    ███    ███  ███▌  
@@ -580,6 +583,7 @@ class _bcAPI {
 		return rest_ensure_response(_bcSettings::get_settings());
 	}
 }
+
 
 //     ▄████████     ▄████████      ███          ███       ▄█   ███▄▄▄▄▄       ▄██████▄      ▄████████  
 //    ███    ███    ███    ███  ▀█████████▄  ▀█████████▄  ███   ███▀▀▀▀██▄    ███    ███    ███    ███  
@@ -650,6 +654,7 @@ class _bcSettings {
 		update_option(self::$option_key, $settings);
 	}
 }
+
 
 //    ▄▄▄▄███▄▄▄▄       ▄████████  ███▄▄▄▄▄    ███    █▄   
 //  ▄██▀▀▀███▀▀▀██▄    ███    ███  ███▀▀▀▀██▄  ███    ███  
@@ -885,6 +890,240 @@ class _bcMenu {
 	}
 }
 
+
+//  ███    █▄      ▄███████▄  ████████▄      ▄████████      ███         ▄████████  
+//  ███    ███    ███    ███  ███   ▀███    ███    ███  ▀█████████▄    ███    ███  
+//  ███    ███    ███    ███  ███    ███    ███    ███     ▀███▀▀██    ███    █▀   
+//  ███    ███    ███    ███  ███    ███    ███    ███      ███   ▀   ▄███▄▄▄      
+//  ███    ███  ▀█████████▀   ███    ███  ▀███████████      ███      ▀▀███▀▀▀      
+//  ███    ███    ███         ███    ███    ███    ███      ███        ███    █▄   
+//  ███    ███    ███         ███   ▄███    ███    ███      ███        ███    ███  
+//  ████████▀    ▄████▀       ████████▀     ███    █▀      ▄████▀      ██████████
+
+if (!class_exists('BU')) {
+	class BU {
+	    private $plugin_file;
+	    private $plugin_basename;
+	    private $plugin_dir;
+	    private $current_version;
+	    private $github_username;
+	    private $github_repo;
+	    private $access_token;
+	    private $cache_key;
+	    private $cache_ttl = 43200;
+
+	    public function __construct($plugin_file, $github_username, $github_repo, $access_token = '') {
+	        $this->plugin_file = $plugin_file;
+	        $this->github_username = $github_username;
+	        $this->github_repo = $github_repo;
+	        $this->access_token = $access_token;
+
+	        $this->plugin_basename = plugin_basename($plugin_file);
+	        $this->plugin_dir = dirname($this->plugin_basename);
+	        $this->cache_key = 'ghu_' . md5($this->plugin_basename);
+
+	        $headers = get_file_data($plugin_file, ['Version' => 'Version']);
+	        $this->current_version = $headers['Version'] ?? '0.0.0';
+
+	        add_filter('plugins_api', [$this, 'plugin_popup_info'], 20, 3);
+	        add_filter('site_transient_update_plugins', [$this, 'push_update_to_transient']);
+	        add_filter('upgrader_install_package_result', [$this, 'fix_directory_name'], 10, 2);
+	        add_action('upgrader_process_complete', [$this, 'clear_cache'], 10, 2);
+	    }
+
+	    private function get_latest_release() {
+	        $cached = get_transient($this->cache_key);
+
+	        if (false !== $cached) {
+	            return $cached;
+	        }
+
+	        $api_url = sprintf('https://api.github.com/repos/%s/%s/releases/latest', $this->github_username, $this->github_repo);
+
+	        $request_args = [
+	            'timeout' => 15,
+	            'headers' => [
+	                'Accept' => 'application/vnd.github+json',
+	                'User-Agent' => 'WordPress/' . get_bloginfo( 'version' )
+	            ]
+	        ];
+
+	        if (!empty($this->access_token)) {
+	            $request_args['headers']['Authorization'] = 'Bearer ' . $this->access_token;
+	        }
+
+	        $response = wp_remote_get($api_url, $request_args);
+
+	        if (is_wp_error( $response ) || 200 !== (int) wp_remote_retrieve_response_code($response)) {
+	            return false;
+	        }
+
+	        $release = json_decode(wp_remote_retrieve_body($response));
+
+	        if (empty($release) || ! isset($release->tag_name)) {
+	            return false;
+	        }
+
+	        set_transient($this->cache_key, $release, $this->cache_ttl);
+
+	        return $release;
+	    }
+
+	    private function get_download_url($release) {
+	        if (!empty($release->assets)) {
+	            foreach ($release->assets as $asset) {
+	                if (isset( $asset->content_type ) && str_contains($asset->content_type, 'zip')) {
+	                    return !empty($this->access_token) ? $asset->url : $asset->browser_download_url;
+	                }
+	            }
+	        }
+
+	        return $release->zipball_url ?? '';
+	    }
+
+	    private function sanitise_version($tag) {
+	        return ltrim($tag, 'vV');
+	    }
+
+	    public function push_update_to_transient($transient) {
+	        if (empty($transient->checked)) {
+	            return $transient;
+	        }
+
+	        $release = $this->get_latest_release();
+
+	        if (!$release) {
+	            return $transient;
+	        }
+
+	        $latest_version = $this->sanitise_version($release->tag_name);
+
+	        if (!version_compare($this->current_version, $latest_version, '<')) {
+	            return $transient;
+	        }
+
+	        $download_url = $this->get_download_url($release);
+
+	        if (empty($download_url)) {
+	            return $transient;
+	        }
+
+	        $update_data = (object) [
+	            'id' => sprintf(
+	                'https://github.com/%s/%s',
+	                $this->github_username,
+	                $this->github_repo
+	            ),
+	            'slug' => $this->plugin_dir,
+	            'plugin' => $this->plugin_basename,
+	            'new_version' => $latest_version,
+	            'url' => sprintf(
+	                'https://github.com/%s/%s',
+	                $this->github_username,
+	                $this->github_repo
+	            ),
+	            'package' => $download_url,
+	            'tested' => '',
+	            'requires' => '',
+	            'requires_php'=> ''
+	        ];
+
+	        $transient->response[$this->plugin_basename] = $update_data;
+
+	        return $transient;
+	    }
+
+	    public function plugin_popup_info($result, $action, $args) {
+	        if ('plugin_information' !== $action) {
+	            return $result;
+	        }
+
+	        if (empty($args->slug) || $args->slug !== $this->plugin_dir) {
+	            return $result;
+	        }
+
+	        $release = $this->get_latest_release();
+
+	        if (!$release) {
+	            return $result;
+	        }
+
+	        $latest_version = $this->sanitise_version($release->tag_name);
+	        $changelog = !empty($release->body) ? '<pre>' . esc_html($release->body) . '</pre>' : '<p>See the <a href="' . esc_url($release->html_url) . '" target="_blank">release notes on GitHub</a>.</p>';
+
+	        $plugin_data = get_file_data($this->plugin_file, [
+	            'name' => 'Plugin Name',
+	            'plugin_uri' => 'Plugin URI',
+	            'author_name' => 'Author',
+	            'author_uri' => 'Author URI',
+	            'requires' => 'Requires at least',
+	            'requires_php'=> 'Requires PHP'
+	        ]);
+
+	        $author_url = esc_url($plugin_data['author_uri'] ?? '#');
+	        $author_name = esc_html($plugin_data['author_name'] ?? '');
+
+	        $info = new stdClass();
+	        $info->name = $plugin_data['name'] ?? $this->plugin_dir;
+	        $info->slug = $this->plugin_dir;
+	        $info->version = $latest_version;
+	        $info->author = sprintf('<a href="%s">%s</a>', $author_url, $author_name);
+	        $info->homepage = $plugin_data['plugin_uri'] ?? sprintf('https://github.com/%s/%s', $this->github_username, $this->github_repo);
+	        $info->requires = $plugin_data['requires'] ?? '';
+	        $info->requires_php = $plugin_data['requires_php'] ?? '';
+	        $info->last_updated = !empty($release->published_at) ? date('Y-m-d', strtotime($release->published_at)) : '';
+	        $info->download_link = $this->get_download_url($release);
+	        $info->trunk = $info->download_link;
+	        $info->sections = [
+	            'changelog' => $changelog
+	        ];
+
+	        return $info;
+	    }
+
+	    public function fix_directory_name($result, $hook_extra) {
+	        if (empty($hook_extra['plugin']) || $hook_extra['plugin'] !== $this->plugin_basename) {
+	            return $result;
+	        }
+
+	        $new_path = $result['destination'] ?? '';
+	        $plugins_root = $result['local_destination'] ?? WP_PLUGIN_DIR;
+	        $correct_path = trailingslashit($plugins_root) . $this->plugin_dir;
+
+	        if (empty($new_path) || $new_path === $correct_path) {
+	            return $result;
+	        }
+
+	        if ($new_path !== $correct_path) {
+	            move_dir($new_path, $correct_path, true);
+	        }
+
+	        $result['destination'] = $correct_path;
+	        $result['destination_name'] = $this->plugin_dir;
+	        $result['remote_destination']= $correct_path;
+
+	        return $result;
+	    }
+
+	    public function clear_cache(WP_Upgrader $upgrader, $options) {
+	        if ('update' === ($options['action'] ?? '') && 'plugin' === ($options['type'] ?? '')) {
+	            delete_transient($this->cache_key);
+	        }
+	    }
+
+	    public function set_cache_ttl($seconds) {
+	        $this->cache_ttl = $seconds;
+	        return $this;
+	    }
+
+	    public function flush_cache() {
+	        delete_transient($this->cache_key);
+	        return $this;
+	    }
+	}
+}
+
+
 //   ▄█         ▄██████▄      ▄██████▄    ▄█   ███▄▄▄▄▄    
 //  ███        ███    ███    ███    ███  ███   ███▀▀▀▀██▄  
 //  ███        ███    ███    ███    █▀   ███▌  ███    ███  
@@ -1031,6 +1270,7 @@ class _bcLogin {
 		return $url;
 	}
 }
+
 
 //   ▄████████   ▄██████▄   ████████▄      ▄████████  
 //  ███    ███  ███    ███  ███   ▀███    ███    ███  
@@ -1812,6 +2052,7 @@ function bc_admin_notice_error() {
 	}
 }
 
+
 //     ▄████████     ▄█    █▄      ▄██████▄      ▄████████      ███      
 //    ███    ███    ███    ███    ███    ███    ███    ███  ▀█████████▄  
 //    ███    █▀     ███    ███    ███    ███    ███    ███     ▀███▀▀██  
@@ -2173,6 +2414,7 @@ function custom_feed() {
 <?php
 }
 
+
 //     ▄████████       ▄█     ▄████████  ▀████    ▐████▀  
 //    ███    ███      ███    ███    ███    ███▌   ████▀   
 //    ███    ███      ███    ███    ███     ███  ▐███     
@@ -2320,6 +2562,7 @@ if (_BC['bc_global'] == 'yes') {
 
 if (_BC['bc_blocks'] == 'yes') {
 	add_action('wp_enqueue_scripts', 'bc_remove_block_styles');
+	add_filter('should_load_separate_core_block_assets', '__return_false');
 }
 
 if (_BC['bc_classic'] == 'yes') {
@@ -2476,5 +2719,12 @@ add_action('rest_api_init', function() {
 	$api = new _bcAPI();
 	$api->add_routes();
 });
+
+// updater
+
+// add github token as 4th parameter
+// for updates from a private repo
+
+new BU(__FILE__, 'nullstep', _PLUGIN_BASIC_CLEAN);
 
 // eof
