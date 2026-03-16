@@ -22,8 +22,12 @@ jQuery(function($) {
 		'bc_cols',
 		'bc_comments',
 		'bc_debug',
+		'bc_hysteria',
+		'bc_backtrace',
+		'bc_wp_options',
+		'bc_pw_notify',
+		'bc_user_notify',
 		'bc_shortcode_lorem',
-		'bc_shortcode_toc',
 		'bc_cache',
 		'bc_sitemap',
 		'bc_ogmeta',
@@ -50,6 +54,7 @@ jQuery(function($) {
 		'bc_folders',
 		'bc_random_text',
 		'bc_form_json',
+		'bc_form_db',
 		'bc_form_active',
 		'bc_mail_log'
 	];

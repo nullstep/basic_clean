@@ -7,7 +7,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.11
+ * Version: 1.3.13
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -115,11 +115,27 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
-	'bc_shortcode_lorem' => [
+	'bc_hysteria' => [
 		'type' => 'string',
 		'default' => 'no'
 	],
-	'bc_shortcode_toc' => [
+	'bc_backtrace' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_wp_options' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_pw_notify' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_user_notify' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_shortcode_lorem' => [
 		'type' => 'string',
 		'default' => 'no'
 	],
@@ -226,6 +242,10 @@ define('_ARGS_BASIC_CLEAN', [
 			JSON_PRETTY_PRINT
 		)
 	],
+	'bc_form_db' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
 	'bc_form_active' => [
 		'type' => 'string',
 		'default' => 'no'
@@ -237,6 +257,34 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_random_text' => [
 		'type' => 'string',
 		'default' => _WORDS_BASIC_CLEAN
+	],
+	'bc_email_html' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_host' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_port' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_username' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_password' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_from' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_smtp_log' => [
+		'type' => 'string',
+		'default' => 'no'
 	]
 ]);
 
@@ -348,12 +396,28 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Show Last PHP Error Notice',
 				'type' => 'check'
 			],
-			'bc_shortcode_lorem' => [
-				'label' => 'Lorem Shortcode Active',
+			'bc_hysteria' => [
+				'label' => 'Stop WP Hysterical Health Warnings',
 				'type' => 'check'
 			],
-			'bc_shortcode_toc' => [
-				'label' => 'TOC Shortcode Active',
+			'bc_backtrace' => [
+				'label' => 'Enable Custom PHP Backtrace',
+				'type' => 'check'
+			],
+			'bc_wp_options' => [
+				'label' => 'Enable wp_options Editor Submenu',
+				'type' => 'check'
+			],
+			'bc_pw_notify' => [
+				'label' => 'Turn off user password/email changed emails to admin',
+				'type' => 'check'
+			],
+			'bc_user_notify' => [
+				'label' => 'Turn off new user registration emails to admin',
+				'type' => 'check'
+			],
+			'bc_shortcode_lorem' => [
+				'label' => 'Lorem Shortcode Active',
 				'type' => 'check'
 			],
 			'bc_cache' => [
@@ -480,8 +544,52 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Forms Active',
 				'type' => 'check'
 			],
+			'bc_form_db' => [
+				'label' => 'Store Form Submissions',
+				'type' => 'check'
+			],
 			'bc_mail_log' => [
 				'label' => 'Show Mail Errors',
+				'type' => 'check'
+			]
+		]
+	],
+	'email' => [
+		'label' => 'Email',
+		'columns' => 1,
+		'fields' => [
+			'bc_email_html' => [
+				'label' => 'HTML Email Template',
+				'type' => 'code'
+			]
+		]
+	],
+	'smtp' => [
+		'label' => 'SMTP',
+		'columns' => 4,
+		'fields' => [
+			'bc_smtp_host' => [
+				'label' => 'SMTP Host',
+				'type' => 'input'
+			],
+			'bc_smtp_port' => [
+				'label' => 'SMTP Port',
+				'type' => 'input'
+			],
+			'bc_smtp_username' => [
+				'label' => 'SMTP Username',
+				'type' => 'input'
+			],
+			'bc_smtp_password' => [
+				'label' => 'SMTP Password',
+				'type' => 'input'
+			],
+			'bc_smtp_from' => [
+				'label' => 'From',
+				'type' => 'input'
+			],
+			'bc_smtp_log' => [
+				'label' => 'Log Sending',
 				'type' => 'check'
 			]
 		]
@@ -1281,6 +1389,35 @@ class _bcLogin {
 //  ███    ███  ███    ███  ███   ▄███    ███    ███  
 //  ████████▀    ▀██████▀   ████████▀     ██████████
 
+// plugin init
+
+function bc_init() {
+	if (_BC['bc_form_db'] == 'yes') {
+		register_post_type('form_log', [
+			'labels' => [
+				'name' => 'Form Log',
+				'singular_name' => 'Form Log',
+				'not_found' => 'No Form Logs found'
+			],
+			'public' => true,
+			'show_in_menu' => true,
+			'show_in_nav_menus' => false,
+			'show_in_rest' => false,
+			'show_in_admin_bar' => false,
+			'publicly_queryable' => false,
+			'hierarchical' => false,
+			'exclude_from_search' => false,
+			'capability_type' => 'post',
+			'capabilities' => [
+				'create_posts' => false
+			],
+			'map_meta_cap' => true,
+			'menu_position' => 5,
+			'menu_icon' => 'dashicons-book'
+		]);
+	}
+}
+
 // creates a random password of $count length
 // avoiding ambigious characters like 1Il etc.
 
@@ -2027,10 +2164,8 @@ function bc_remove_commenting() {
 	add_filter('pings_open', '__return_false', 20, 2);
 	add_filter('comments_array', '__return_empty_array', 10, 2);
 
-	if (is_admin()) {
-		remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
-		remove_menu_page('edit-comments.php');
-	}
+	remove_meta_box('dashboard_recent_comments', 'dashboard', 'normal');
+	remove_menu_page('edit-comments.php');
 
 	if (is_admin_bar_showing()) {
 		remove_action('admin_bar_menu', 'wp_admin_bar_comments_menu', 60);
@@ -2050,6 +2185,135 @@ function bc_admin_notice_error() {
 		echo '</div>';
 		echo '<style>.php-error #adminmenuback,.php-error #adminmenuwrap{margin-top:0;}</style>';
 	}
+}
+
+// stop wp whining about stupid stuff
+
+function bc_remove_hysterical_checks($tests) {
+	unset($tests['direct']['php_sessions']);
+	unset($tests['direct']['rest_availability']);
+	unset($tests['direct']['php_version']);
+	unset($tests['direct']['php_extensions']);
+	unset($tests['direct']['php_default_timezone']);
+	unset($tests['direct']['php_sessions']);
+	unset($tests['direct']['sbi_test_check_errors']);
+	unset($tests['direct']['wordpress_version']);
+	unset($tests['direct']['plugin_version']);
+	unset($tests['direct']['theme_version']);
+	unset($tests['direct']['rsssl_ssl_health']);
+	unset($tests['direct']['persistent_object_cache']);
+	unset($tests['direct']['headers_test']);
+	unset($tests['direct']['sbi_test_check_errors']);
+	unset($tests['direct']['wp_cache_status']);
+	
+	return $tests;
+}
+
+// add our custom backtrace for better debugging
+
+function bc_add_backtrace() {
+	function wp_log_full_backtrace($label = '') {
+		$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+
+		$output = [];
+		if ($label) {
+			$output[] = "=== $label ===";
+		}
+
+		foreach ($trace as $i => $frame) {
+			$file = $frame['file'] ?? '[internal function]';
+			$line = $frame['line'] ?? '';
+			$func = $frame['function'] ?? '';
+			$class = $frame['class'] ?? '';
+			$type = $frame['type'] ?? '';
+
+			$output[] = sprintf(
+				"#%d %s(%s): %s%s%s()",
+				$i,
+				$file,
+				$line,
+				$class,
+				$type,
+				$func
+			);
+		}
+
+		error_log(implode("\n", $output));
+	}
+
+	set_error_handler(function ($errno, $errstr, $errfile, $errline) {
+		if (!(error_reporting() & $errno)) {
+			return false;
+		}
+
+		error_log("*** PHP Error [$errno]: $errstr in $errfile on line $errline");
+		wp_log_full_backtrace('Stack trace');
+
+		return false;
+	});
+}
+
+// htaccess stuff
+
+function bc_output_htaccess($rules) {
+	$plugin = _PLUGIN_BASIC_CLEAN;
+	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
+
+	if (_BC['bc_fa'] != 'none') {
+		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts/$1 [L]\n";
+	}
+
+	if (_BC['bc_sitemap'] == 'yes') {
+		$new_rules .= "RewriteRule ^sitemap\.xml$ /wp-content/plugins/{$plugin}/index.php?file=sitemap [L]\n";
+	}
+
+	return $new_rules . "</IfModule>\n# END {$plugin}\n\n" . $rules;
+}
+
+function bc_flush_htaccess() {
+	flush_rewrite_rules();
+}
+
+// cache control stuff
+
+function bc_set_cache_control() {
+	header('Cache-Control: max-age=' . _BC['bc_cache']);
+}
+
+// custom feeds stuff
+
+function disable_feed() {
+	die('no feed available');
+}
+
+function custom_feed() {
+	$posts = query_posts('showposts=' . 9999);
+	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), true);
+	echo '<?xml version="1.0" encoding="' . get_option('blog_charset') . '"?' . '>';
+?>
+<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" <?php do_action('rss2_ns'); ?>>
+	<channel>
+		<title><?php bloginfo_rss('name'); ?> - Feed</title>
+		<atom:link href="<?php self_link(); ?>" rel="self" type="application/rss+xml" />
+		<link><?php bloginfo_rss('url') ?></link>
+		<description><?php bloginfo_rss('description') ?></description>
+		<?php do_action('rss2_head'); ?>
+<?php while(have_posts()) : the_post(); ?>
+		<item>
+			<title><?php the_title_rss(); ?></title>
+			<link><?php the_permalink_rss(); ?></link>
+			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
+			<dc:creator><?php the_author(); ?></dc:creator>
+			<guid isPermaLink="false"><?php the_guid(); ?></guid>
+			<description><![CDATA[<?php the_excerpt_rss() ?>]]></description>
+			<content:encoded><![CDATA[<?php the_content_feed() ?>]]></content:encoded>
+			<?php rss_enclosure(); ?>
+			<?php do_action('rss2_item'); ?>
+		</item>
+<?php endwhile; ?>
+	</channel>
+</rss>
+<?php
 }
 
 
@@ -2105,76 +2369,8 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 	return $text;
 }
 
-// toc shortcode
-
-function bc_toc_render($content, $post) {
-	$html = '<div id="toc-' . $post->post_name . '" class="toc">';
-		$html .= '<div class="toc-title"><p>Table of Contents</p></div>';
-
-	$dom = new DOMDocument();
-	libxml_use_internal_errors(true);
-	if (!$dom->loadHTML('<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf-8"></head><body id="BCTOC">' . $content . '</body></html>')) {
-		return 'parse error';
-	}
-	libxml_clear_errors();
-
-	$xpath = new DOMXPath($dom);
-
-	$headings = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
-
-	if (!empty($headings)) {
-		foreach ($headings as $heading) {
-			$id = sanitize_title($heading->textContent);
-			$tag = $heading->tagName;
-			$html .= '<' . $tag . ' class="toc-heading"><a href="#' . $id . '">' . $heading->textContent . '</a></' . $tag . '>';
-			//$html .= '<p>' . $tag . '</p>';
-		}
-	}
-
-	return $html . '</div>';
-}
-
-function bc_toc_shortcode($atts = [], $content = null, $tag = '') {
-	global $bc_page_content, $post;
-
-	return bc_toc_render($bc_page_content, $post);
-}
-
-function bc_fetch_page_content() {
-	global $post, $bc_page_content;
-
-	if (is_singular('page')) {
-		$page = get_post($post->ID);
-
-		$bc_page_content = apply_filters('the_content', $page->post_content);
-	}
-}
-
-function bc_heading_ids($content) {
-	$content = preg_replace_callback('/<h([1-6])(.*?)>(.*?)<\/h\1>/i', function ($matches) {
-		$tag = strtolower($matches[1]);
-		$attributes = $matches[2];
-		$heading_text = strip_tags($matches[3]);
-		$id = sanitize_title($heading_text);
-
-		$original_class = '';
-		if (preg_match('/class=[\'"]([^\'"]+)[\'"]/', $attributes, $class_matches)) {
-			$original_class = $class_matches[1];
-		}
-
-		$original_id = null;
-		if (preg_match('/id=[\'"]([^\'"]+)[\'"]/', $attributes, $id_matches)) {
-			$original_id = $id_matches[1];
-		}
-
-		return '<h' . $tag . ' id="' . ($original_id ?? $id) . '"' . (($original_class == 'wp-block-heading') ? '' :  ' class="' . $original_class . '"') . '>' . $matches[3] . '</h' . $tag . '>';
-
-	}, $content);
-
-	return $content;
-}
-
 // form shortcode
+// THIS NEEDS UPDATING
 
 function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 	$html = '';
@@ -2252,9 +2448,9 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 				$html .= '</div>';
 			}
 			$html .= '<div class="mb-3">';
-			$html .= '<input type="hidden" name="action" value="contact_form_action">';
+			$html .= '<input type="hidden" name="action" value="form_action">';
 			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
-			$html .= wp_nonce_field('contact_form_action', '_bc_nonce', true, false);
+			$html .= wp_nonce_field('form_action', '_bc_nonce', true, false);
 			$html .= '<input class="btn btn-primary" id="contact-button" type="submit" value="Send">';
 			$html .= '</div>';
 
@@ -2273,7 +2469,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 	return $html;
 }
 
-// contact form post handler
+// form post handler
 
 function bc_contact_form_callback() {
 	if (!wp_verify_nonce($_POST['_bc_nonce'], $_POST['action'])) {
@@ -2351,67 +2547,72 @@ function bc_contact_form_callback() {
 	die(json_encode($json));
 }
 
-// htaccess stuff
 
-function bc_output_htaccess($rules) {
-	$plugin = _PLUGIN_BASIC_CLEAN;
-	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
+//   ▄████████   ▄█           ▄████████     ▄████████     ▄████████  
+//  ███    ███  ███          ███    ███    ███    ███    ███    ███  
+//  ███    █▀   ███          ███    ███    ███    █▀     ███    █▀   
+//  ███         ███          ███    ███    ███           ███         
+//  ███         ███        ▀███████████  ▀███████████  ▀███████████  
+//  ███    █▄   ███          ███    ███           ███           ███  
+//  ███    ███  ███▌    ▄    ███    ███     ▄█    ███     ▄█    ███  
+//  ████████▀   █████▄▄██    ███    █▀    ▄████████▀    ▄████████▀
 
-	if (_BC['bc_fa'] != 'none') {
-		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts/$1 [L]\n";
+// our extensible U class of static methods that are useful
+
+if (!class_exists('U'))
+{
+	class U {
+		public static $user;
+
+		public static function init()
+		{
+			self::$user = (is_user_logged_in()) ? wp_get_current_user() : NULL;
+		}
+
+		public static function check_consent()
+		{
+			if (isset($_COOKIE['user_consent'])) {
+				return ($_COOKIE['user_consent'] == 'yes') ? TRUE : FALSE;
+			}
+
+			return NULL;
+		}
+
+		public static function set_cookie($key, $value, $seconds = 3600)
+		{
+			setcookie($key, $value, time() + $seconds, COOKIEPATH, COOKIE_DOMAIN);
+		}
+
+		public static function get_cookie($key)
+		{
+			return $_COOKIE[$key] ?? FALSE;
+		}
+
+		public static function hex_to_cmyk($hex)
+		{
+			$hex = ltrim($hex, '#');
+
+			if (strlen($hex) != 6) {
+				return FALSE;
+			}
+
+			$r = hexdec(substr($hex, 0, 2)) / 255;
+			$g = hexdec(substr($hex, 2, 2)) / 255;
+			$b = hexdec(substr($hex, 4, 2)) / 255;
+
+			$k = 1 - max($r, $g, $b);
+			$c = (1 - $r - $k) / (1 - $k);
+			$m = (1 - $g - $k) / (1 - $k);
+			$y = (1 - $b - $k) / (1 - $k);
+
+			return [
+				'c' => $c,
+				'm' => $m,
+				'y' => $y,
+				'k' => $k
+			];
+		}
 	}
-
-	if (_BC['bc_sitemap'] == 'yes') {
-		$new_rules .= "RewriteRule ^sitemap\.xml$ /wp-content/plugins/{$plugin}/index.php?file=sitemap [L]\n";
-	}
-
-	return $new_rules . "</IfModule>\n# END {$plugin}\n\n" . $rules;
-}
-
-function bc_flush_htaccess() {
-	flush_rewrite_rules();
-}
-
-// cache control stuff
-
-function bc_set_cache_control() {
-	header('Cache-Control: max-age=' . _BC['bc_cache']);
-}
-
-// custom feeds stuff
-
-function disable_feed() {
-	die('no feed available');
-}
-
-function custom_feed() {
-	$posts = query_posts('showposts=' . 9999);
-	header('Content-Type: ' . feed_content_type('rss-http') . '; charset=' . get_option('blog_charset'), true);
-	echo '<?xml version="1.0" encoding="' . get_option('blog_charset') . '"?' . '>';
-?>
-<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:sy="http://purl.org/rss/1.0/modules/syndication/" xmlns:slash="http://purl.org/rss/1.0/modules/slash/" <?php do_action('rss2_ns'); ?>>
-	<channel>
-		<title><?php bloginfo_rss('name'); ?> - Feed</title>
-		<atom:link href="<?php self_link(); ?>" rel="self" type="application/rss+xml" />
-		<link><?php bloginfo_rss('url') ?></link>
-		<description><?php bloginfo_rss('description') ?></description>
-		<?php do_action('rss2_head'); ?>
-<?php while(have_posts()) : the_post(); ?>
-		<item>
-			<title><?php the_title_rss(); ?></title>
-			<link><?php the_permalink_rss(); ?></link>
-			<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_post_time('Y-m-d H:i:s', true), false); ?></pubDate>
-			<dc:creator><?php the_author(); ?></dc:creator>
-			<guid isPermaLink="false"><?php the_guid(); ?></guid>
-			<description><![CDATA[<?php the_excerpt_rss() ?>]]></description>
-			<content:encoded><![CDATA[<?php the_content_feed() ?>]]></content:encoded>
-			<?php rss_enclosure(); ?>
-			<?php do_action('rss2_item'); ?>
-		</item>
-<?php endwhile; ?>
-	</channel>
-</rss>
-<?php
 }
 
 
@@ -2483,7 +2684,98 @@ function bc_ajax() {
 	}
 
 	echo json_encode($response);
-	wp_die();
+	die();
+}
+
+
+//     ▄████████    ▄▄▄▄███▄▄▄▄       ▄████████   ▄█    ▄█        
+//    ███    ███  ▄██▀▀▀███▀▀▀██▄    ███    ███  ███   ███        
+//    ███    █▀   ███   ███   ███    ███    ███  ███▌  ███        
+//   ▄███▄▄▄      ███   ███   ███    ███    ███  ███▌  ███        
+//  ▀▀███▀▀▀      ███   ███   ███  ▀███████████  ███▌  ███        
+//    ███    █▄   ███   ███   ███    ███    ███  ███   ███        
+//    ███    ███  ███   ███   ███    ███    ███  ███   ███▌    ▄  
+//    ██████████   ▀█   ███   █▀     ███    █▀   █▀    █████▄▄██
+
+function bc_send_email($args, $to, $subject) {
+	$html = _BC['bc_email_html'];
+
+	$in = [
+		'[[year]]'
+	];
+	$out = [
+		date('Y')
+	];
+
+	if (is_array($args)) {
+		foreach ($args as $key => $value) {
+			$in[] = '[[' . $key . ']]';
+			$out[] = $value;
+		}
+	}
+
+	$message = str_replace($in, $out, $html);
+	return bc_email($to, $subject, $message);
+}
+
+function bc_email($to, $subject, $message, $headers = [], $attachments = []) {
+	global $phpmailer;
+
+	if (!($phpmailer instanceof PHPMailer\PHPMailer\PHPMailer)) {
+		require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
+		require_once ABSPATH . WPINC . '/PHPMailer/Exception.php';
+		$phpmailer = new PHPMailer\PHPMailer\PHPMailer();
+	}
+
+	$phpmailer->isSMTP();
+	$phpmailer->SMTPDebug = 0;
+	$phpmailer->Debugoutput = 'error_log';
+	$phpmailer->Host = _BC['bc_smtp_host'];
+	$phpmailer->SMTPAuth = true;
+	$phpmailer->Username = _BC['bc_smtp_username'];
+	$phpmailer->Password = _BC['bc_smtp_password'];
+	$phpmailer->SMTPSecure = 'ssl';
+	$phpmailer->Port = _BC['bc_smtp_port'];
+	$phpmailer->isHTML(true);
+
+	if ($attachments) {
+		if (is_array($attachments) && count($attachments) > 0) {
+			foreach ($attachments as $a) {
+				if (file_exists($a)) {
+					$phpmailer->addAttachment($a);
+				}
+			}
+		}
+		else {
+			if (file_exists($attachments)) {
+				$phpmailer->addAttachment($attachments);
+			}
+		}
+	}
+
+	$phpmailer->setFrom(_BC['bc_smtp_username'], _BC['bc_smtp_from']);
+
+	if (is_array($to) && count($to) > 0) {
+		foreach ($to as $a) {
+			$phpmailer->addAddress($a);
+		}
+	}
+	else {
+		$phpmailer->addAddress($to);
+	}
+
+	$phpmailer->Subject = $subject;
+	$phpmailer->Body = $message;
+
+	if (_BC['bc_smtp_log'] == 'yes') {
+		error_log('basic_clean - php mailer sending email to: "' . (is_array($to) ? implode(', ', $to) : $to) . '" with subject "' . $subject . '"');
+	}
+
+	$sent = $phpmailer->send();
+	$phpmailer = null;
+
+	return $sent;
 }
 
 
@@ -2501,6 +2793,10 @@ function bc_ajax() {
 global $bc_page_content;
 
 define('_BC', _bcSettings::get_settings());
+
+if (_BC['bc_backtrace'] == 'yes') {
+	add_action('plugins_loaded', 'bc_add_backtrace');
+}
 
 add_action('admin_enqueue_scripts', 'bc_add_scripts');
 
@@ -2529,6 +2825,14 @@ if (_BC['bc_cleaning'] == 'yes') {
 	remove_action('admin_print_scripts', 'print_emoji_detection_script');
 	remove_action('admin_print_styles', 'print_emoji_styles');
 	remove_action('template_redirect', 'rest_output_link_header', 11, 0);
+
+	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
+	remove_filter('the_excerpt', 'wpautop');
+	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
+
+	add_action('widgets_init', 'bc_remove_recent_comments_style');
+	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
+
 	add_filter('show_admin_bar', '__return_false');
 	add_filter('wp_calculate_image_srcset', '__return_false');
 	add_filter('widget_text', 'shortcode_unautop');
@@ -2542,11 +2846,6 @@ if (_BC['bc_cleaning'] == 'yes') {
 	add_filter('page_css_class', 'bc_nav_attributes_filter', 100, 1);
 	add_filter('wp_img_tag_add_width_and_height_attr', 'bc_remove_img_width_height', 10, 4);
 	add_filter('wp_img_tag_add_auto_sizes', '__return_false');
-	remove_filter('oembed_dataparse', 'wp_filter_oembed_result', 10);
-	remove_filter('the_excerpt', 'wpautop');
-	remove_filter('wp_robots', 'wp_robots_max_image_preview_large');
-	add_action('widgets_init', 'bc_remove_recent_comments_style');
-	add_action('admin_action_bc_duplicate_post_as_draft', 'bc_duplicate_post_as_draft');
 	add_filter('wp_speculation_rules_configuration', '__return_null');
 }
 
@@ -2590,6 +2889,7 @@ if (_BC['bc_nocat'] == 'yes') {
 	add_action('created_category', 'bc_no_category_base_refresh_rules');
 	add_action('delete_category', 'bc_no_category_base_refresh_rules');
 	add_action('edited_category', 'bc_no_category_base_refresh_rules');
+
 	add_filter('category_rewrite_rules', 'bc_no_category_base_rewrite_rules');
 	add_filter('query_vars', 'bc_no_category_base_query_vars');
 	add_filter('request', 'bc_no_category_base_request');
@@ -2615,6 +2915,29 @@ if (_BC['bc_fa'] != 'none') {
 
 if (_BC['bc_mimes'] == 'yes') {
 	add_filter('upload_mimes', 'bc_add_mime_types');
+}
+
+if (_BC['bc_wp_options'] == 'yes') {
+	add_action('admin_menu', function() {
+		add_options_page(
+			'Edit wp_options',
+			'Edit wp_options',
+			'manage_options',
+			'options.php',
+			'',
+			99
+		);
+	});
+}
+
+if (_BC['bc_user_notify'] == 'yes') {
+	remove_action('register_new_user', 'wp_send_new_user_notifications');
+	remove_action('edit_user_created_user', 'wp_send_new_user_notifications');
+}
+
+if (_BC['bc_pw_notify'] == 'yes') {
+	add_filter('send_password_change_email', '__return_false');
+	add_filter('send_email_change_email', '__return_false');
 }
 
 if (_BC['bc_unfiltered'] == 'yes') {
@@ -2656,12 +2979,6 @@ if (_BC['bc_shortcode_lorem'] == 'yes') {
 	add_shortcode('lorem', 'bc_lorem_shortcode');
 }
 
-if (_BC['bc_shortcode_toc'] == 'yes') {
-	add_action('wp', 'bc_fetch_page_content');
-	add_filter('the_content', 'bc_heading_ids', 99);
-	add_shortcode('toc', 'bc_toc_shortcode');
-}
-
 if (_BC['bc_feeds'] != 'default') {
 	$feed = _BC['bc_feeds'] . '_feed';
 	add_action('do_feed', $feed, 1);
@@ -2674,8 +2991,8 @@ if (_BC['bc_feeds'] != 'default') {
 }
 
 if (_BC['bc_form_active'] == 'yes') {
-	add_action('wp_ajax_contact_form_action', 'bc_contact_form_callback');
-	add_action('wp_ajax_nopriv_contact_form_action', 'bc_contact_form_callback');
+	add_action('wp_ajax_form_action', 'bc_form_callback');
+	add_action('wp_ajax_nopriv_form_action', 'bc_form_callback');
 	add_shortcode('form', 'bc_form_shortcode');
 }
 
@@ -2685,6 +3002,10 @@ if (_BC['bc_mail_log'] == 'yes') {
 
 if (_BC['bc_dashboard'] == 'yes') {
 	add_action('wp_dashboard_setup', 'bc_remove_dashboard_widgets');
+}
+
+if (_BC['bc_hysteria'] == 'yes') {
+	add_filter('site_status_tests', 'bc_remove_hysterical_checks');
 }
 
 if (_BC['bc_debug'] == 'yes') {
@@ -2703,6 +3024,8 @@ remove_action('shutdown', 'wp_ob_end_flush_all', 1);
 // boot plugin
 
 add_action('init', function() {
+	bc_init();
+
 	if (is_admin()) {
 		if (count(_AJAX_BASIC_CLEAN)) {
 			foreach (_AJAX_BASIC_CLEAN as $ajax) {
