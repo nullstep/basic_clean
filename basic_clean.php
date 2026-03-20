@@ -1380,6 +1380,326 @@ class _bcLogin {
 }
 
 
+//  ███▄▄▄▄▄       ▄████████   ▄█    █▄   
+//  ███▀▀▀▀██▄    ███    ███  ███    ███  
+//  ███    ███    ███    ███  ███    ███  
+//  ███    ███    ███    ███  ███    ███  
+//  ███    ███  ▀███████████  ███    ███  
+//  ███    ███    ███    ███  ▀██    ███  
+//  ███    ███    ███    ███   ▀██  ██▀   
+//   ▀█    █▀     ███    █▀     ▀████▀
+
+function bc_export_nav($location) {
+    if ($location === '') {
+        return false;
+    }
+
+    $locations = get_nav_menu_locations();
+
+    if (empty($locations[$location])) {
+        return false;
+    }
+
+    $menu_id = (int) $locations[$location];
+    $menu = wp_get_nav_menu_object($menu_id);
+
+    if (!$menu) {
+        return false;
+    }
+
+    $items = wp_get_nav_menu_items($menu_id, [
+        'post_status' => 'any',
+        'output' => ARRAY_A
+    ]);
+
+    if ($items === false) {
+        return false;
+    }
+
+    $export_items = [];
+
+    foreach ($items as $item) {
+        $classes = [];
+
+        if (isset($item->classes)) {
+            if (is_array($item->classes)) {
+                $classes = array_values(array_filter(array_map('strval', $item->classes)));
+            }
+            elseif (is_string($item->classes) && $item->classes !== '') {
+                $classes = preg_split('/\s+/', trim($item->classes));
+            }
+        }
+
+        $export_items[] = [
+            'export_id' => (int) $item->ID,
+            'title' => (string) $item->title,
+            'menu_order' => (int) $item->menu_order,
+            'parent_export_id' => (int) $item->menu_item_parent,
+            'type' => (string) $item->type,
+            'object' => isset($item->object) ? (string) $item->object : '',
+            'object_id' => isset($item->object_id) ? (int) $item->object_id : 0,
+            'url' => isset($item->url) ? (string) $item->url : '',
+            'target' => isset($item->target) ? (string) $item->target : '',
+            'attr_title' => isset($item->attr_title) ? (string) $item->attr_title : '',
+            'description' => isset($item->description) ? (string) $item->description : '',
+            'xfn' => isset($item->xfn) ? (string) $item->xfn : '',
+            'classes' => $classes,
+            'status' => isset($item->post_status) ? (string) $item->post_status : 'publish'
+        ];
+    }
+
+    $payload = [
+        'format' => 'wp-nav-menu-export-v1',
+        'menu' => [
+            'name' => (string) $menu->name,
+            'slug' => (string) $menu->slug,
+            'term_id' => (int) $menu->term_id,
+            'location' => (string) $location,
+            'exported' => current_time('mysql'),
+            'item_count' => count($export_items)
+        ],
+        'items'  => $export_items
+    ];
+
+    return wp_json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+}
+
+function bc_import_nav($json, $location, $menu_name = null, $replace_existing_location_menu = false) {
+    if (!is_string($json) || trim($json) === '') {
+        return false;
+    }
+
+    if (!is_string($location) || $location === '') {
+        return false;
+    }
+
+    $registered_locations = get_registered_nav_menus();
+
+    if (!isset($registered_locations[$location])) {
+        return false;
+    }
+
+    $data = json_decode($json, true);
+
+    if (!is_array($data) || empty($data['items']) || !is_array($data['items'])) {
+        return false;
+    }
+
+    $source_name = '';
+
+    if (!empty($data['menu']['name'])) {
+        $source_name = (string) $data['menu']['name'];
+    }
+
+    $menu_id = 0;
+    $locations = get_nav_menu_locations();
+
+    if ($replace_existing_location_menu && !empty($locations[$location])) {
+        $menu_id = (int) $locations[$location];
+
+        $existing_items = wp_get_nav_menu_items($menu_id, [
+            'post_status' => 'any',
+            'output' => ARRAY_A
+        ]);
+
+        if (is_array($existing_items)) {
+            foreach ($existing_items as $existing_item) {
+                wp_delete_post((int) $existing_item->ID, true);
+            }
+        }
+    }
+    else {
+        $final_menu_name = $menu_name ? $menu_name : ($source_name ? $source_name : 'Imported Menu');
+
+        if (!$menu_name && $location) {
+            $final_menu_name .= ' (' . $location . ')';
+        }
+
+        $menu_id = wp_create_nav_menu(wp_slash($final_menu_name));
+
+        if (is_wp_error($menu_id)) {
+            return false;
+        }
+    }
+
+    if (!$menu_id) {
+        return false;
+    }
+
+    usort($data['items'], function($a, $b) {
+        $ao = isset($a['menu_order']) ? (int) $a['menu_order'] : 0;
+        $bo = isset($b['menu_order']) ? (int) $b['menu_order'] : 0;
+        return $ao <=> $bo;
+    });
+
+    $id_map = [];
+
+    foreach ($data['items'] as $item) {
+        $classes = [];
+
+        if (isset($item['classes'])) {
+            if (is_array($item['classes'])) {
+                $classes = array_values(array_filter(array_map('strval', $item['classes'])));
+            }
+            elseif (is_string($item['classes']) && trim($item['classes']) !== '') {
+                $classes = preg_split('/\s+/', trim($item['classes']));
+            }
+        }
+
+        $type = isset($item['type']) ? (string) $item['type'] : 'custom';
+        $object = isset($item['object']) ? (string) $item['object'] : '';
+        $object_id = isset($item['object_id']) ? (int) $item['object_id'] : 0;
+        $url = isset($item['url']) ? (string) $item['url'] : '';
+        $title = isset($item['title']) ? (string) $item['title'] : '';
+        $status = !empty($item['status']) ? (string) $item['status'] : 'publish';
+        $position = isset($item['menu_order']) ? (int) $item['menu_order'] : 0;
+
+        $can_use_original_reference = false;
+
+        switch ($type) {
+			case 'post_type': {
+				if ($object_id > 0 && get_post($object_id)) {
+					$can_use_original_reference = true;
+				}
+
+				break;
+			}
+			case 'taxonomy': {
+				if ($object_id > 0 && term_exists($object_id, $object)) {
+					$can_use_original_reference = true;
+				}
+
+				break;
+			}
+			case 'post_type_archive':
+			case 'custom' {
+				$can_use_original_reference = true;
+				break;
+			}
+        }
+
+        if (!$can_use_original_reference) {
+            $type = 'custom';
+            $object = 'custom';
+            $object_id = 0;
+        }
+
+        $new_item_id = wp_update_nav_menu_item( $menu_id, 0, [
+            'menu-item-title' => $title,
+            'menu-item-position' => $position,
+            'menu-item-parent-id' => 0,
+            'menu-item-type' => $type,
+            'menu-item-object' => $object,
+            'menu-item-object-id' => $object_id,
+            'menu-item-url' => $url,
+            'menu-item-target' => isset($item['target']) ? (string) $item['target'] : '',
+            'menu-item-attr-title' => isset($item['attr_title']) ? (string) $item['attr_title'] : '',
+            'menu-item-description' => isset($item['description']) ? (string) $item['description'] : '',
+            'menu-item-classes' => implode(' ', $classes),
+            'menu-item-xfn' => isset($item['xfn']) ? (string) $item['xfn'] : '',
+            'menu-item-status' => $status
+        ]);
+
+        if (is_wp_error($new_item_id)) {
+            return false;
+        }
+
+        if (isset($item['export_id'])) {
+            $id_map[(int) $item['export_id']] = (int) $new_item_id;
+        }
+    }
+
+    foreach ($data['items'] as $item) {
+        $old_id = isset($item['export_id']) ? (int) $item['export_id'] : 0;
+        $old_parent = isset($item['parent_export_id']) ? (int) $item['parent_export_id'] : 0;
+
+        if (!$old_id || empty($id_map[$old_id])) {
+            continue;
+        }
+
+        $new_id = $id_map[$old_id];
+        $new_parent_id = ($old_parent && ! empty($id_map[$old_parent])) ? $id_map[$old_parent] : 0;
+
+        $classes = [];
+
+        if (isset($item['classes'])) {
+            if (is_array($item['classes'])) {
+                $classes = array_values(array_filter(array_map('strval', $item['classes'])));
+            }
+            elseif (is_string($item['classes']) && trim($item['classes']) !== '') {
+                $classes = preg_split('/\s+/', trim($item['classes']));
+            }
+        }
+
+        $type = isset($item['type']) ? (string) $item['type'] : 'custom';
+        $object = isset($item['object']) ? (string) $item['object'] : '';
+        $object_id = isset($item['object_id']) ? (int) $item['object_id'] : 0;
+
+        $can_use_original_reference = false;
+
+        switch ($type) {
+			case 'post_type': {
+				if ($object_id > 0 && get_post($object_id)) {
+					$can_use_original_reference = true;
+				}
+
+				break;
+			}
+			case 'taxonomy': {
+				if ($object_id > 0 && term_exists($object_id, $object)) {
+					$can_use_original_reference = true;
+				}
+
+				break;
+			}
+			case 'post_type_archive':
+			case 'custom' {
+				$can_use_original_reference = true;
+				break;
+			}
+        }
+
+        if (!$can_use_original_reference) {
+            $type = 'custom';
+            $object = 'custom';
+            $object_id = 0;
+        }
+
+        $updated = wp_update_nav_menu_item( $menu_id, $new_id, [
+            'menu-item-title' => isset($item['title']) ? (string) $item['title'] : '',
+            'menu-item-position' => isset($item['menu_order']) ? (int) $item['menu_order'] : 0,
+            'menu-item-parent-id' => $new_parent_id,
+            'menu-item-type' => $type,
+            'menu-item-object' => $object,
+            'menu-item-object-id' => $object_id,
+            'menu-item-url' => isset($item['url']) ? (string) $item['url'] : '',
+            'menu-item-target' => isset($item['target']) ? (string) $item['target'] : '',
+            'menu-item-attr-title' => isset($item['attr_title']) ? (string) $item['attr_title'] : '',
+            'menu-item-description' => isset($item['description']) ? (string) $item['description'] : '',
+            'menu-item-classes' => implode(' ', $classes),
+            'menu-item-xfn' => isset($item['xfn']) ? (string) $item['xfn'] : '',
+            'menu-item-status' => ! empty($item['status']) ? (string) $item['status'] : 'publish'
+        ]);
+
+        if (is_wp_error($updated)) {
+            return false;
+        }
+    }
+
+    $locations = get_nav_menu_locations();
+    $locations[$location] = (int) $menu_id;
+    set_theme_mod('nav_menu_locations', $locations);
+
+    return [
+        'success' => true,
+        'menu_id' => (int) $menu_id,
+        'location' => (string) $location,
+        'menu_name' => wp_get_nav_menu_object( $menu_id )->name,
+    ];
+}
+
+
+
 //   ▄████████   ▄██████▄   ████████▄      ▄████████  
 //  ███    ███  ███    ███  ███   ▀███    ███    ███  
 //  ███    █▀   ███    ███  ███    ███    ███    █▀   
