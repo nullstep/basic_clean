@@ -7,7 +7,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.13
+ * Version: 1.3.14
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -1572,7 +1572,7 @@ function bc_import_nav($json, $location, $menu_name = null, $replace_existing_lo
 				break;
 			}
 			case 'post_type_archive':
-			case 'custom' {
+			case 'custom': {
 				$can_use_original_reference = true;
 				break;
 			}
@@ -1653,7 +1653,7 @@ function bc_import_nav($json, $location, $menu_name = null, $replace_existing_lo
 				break;
 			}
 			case 'post_type_archive':
-			case 'custom' {
+			case 'custom': {
 				$can_use_original_reference = true;
 				break;
 			}
