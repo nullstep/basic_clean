@@ -32,6 +32,8 @@ jQuery(function($) {
 		'bc_sitemap',
 		'bc_ogmeta',
 		'bc_cleaning',
+		'bc_rest_users',
+		'bc_rest_list',
 		'bc_htaccess',
 		'bc_fa',
 		'bc_fa_load',

@@ -7,7 +7,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.14
+ * Version: 1.3.15
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -230,6 +230,14 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_dashboard' => [
 		'type' => 'string',
 		'default' => 'yes'
+	],
+	'bc_rest_users' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_rest_list' => [
+		'type' => 'string',
+		'default' => 'no'
 	],
 	'bc_folders' => [
 		'type' => 'string',
@@ -528,6 +536,14 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_dashboard' => [
 				'label' => 'Remove WP Dashboard Widgets',
+				'type' => 'check'
+			],
+			'bc_rest_users' => [
+				'label' => 'Enable Listing Users by REST',
+				'type' => 'check'
+			],
+			'bc_rest_list' => [
+				'label' => 'Enable Listing Endpoints by REST',
 				'type' => 'check'
 			]
 		]
@@ -2577,7 +2593,7 @@ function bc_add_backtrace() {
 
 function bc_output_htaccess($rules) {
 	$plugin = _PLUGIN_BASIC_CLEAN;
-	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
+	$new_rules = "\n# BEGIN {$plugin}\n<IfModule mod_rewrite.c>\n<Files xmlrpc.php>\nRequire all denied\n</Files>\n\nRewriteEngine On\nRewriteCond %{REQUEST_URI} ^/img [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\nRewriteCond %{REQUEST_URI} ^/uploads [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/index.php?file=$1 [L]\n";
 
 	if (_BC['bc_fa'] != 'none') {
 		$new_rules .= "RewriteCond %{REQUEST_URI} ^/fonts [NC]\nRewriteRule /(.*) wp-content/plugins/{$plugin}/fonts/$1 [L]\n";
@@ -3335,6 +3351,30 @@ if (_BC['bc_debug'] == 'yes') {
 if (_BC['bc_cookies'] == 'yes') {
 	add_action('wp_head', 'bc_cookie_scripts');
 	add_action('wp_footer', 'bc_cookie_consent');
+}
+
+if (_BC['bc_rest_users'] != 'yes') {
+	add_filter('rest_endpoints', function ($endpoints) {
+		if (isset($endpoints['/wp/v2/users'])) {
+			unset($endpoints['/wp/v2/users']);
+		}
+
+		if (isset($endpoints['/wp/v2/users/(?P<id>[\d]+)'])) {
+			unset($endpoints['/wp/v2/users/(?P<id>[\d]+)']);
+		}
+
+		return $endpoints;
+	});
+}
+
+if (_BC['bc_rest_list'] != 'yes') {
+	add_filter('rest_index', function ($response) {
+		return new WP_Error(
+			'rest_disabled',
+			'REST API index disabled.',
+			['status' => 404]
+		);
+	});
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);
