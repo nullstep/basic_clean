@@ -135,6 +135,14 @@ define('_ARGS_BASIC_CLEAN', [
 		'type' => 'string',
 		'default' => 'no'
 	],
+	'bc_user_redirect' => [
+		'type' => 'string',
+		'default' => ''
+	],
+	'bc_redirect_url' => [
+		'type' => 'string',
+		'default' => ''
+	],
 	'bc_shortcode_lorem' => [
 		'type' => 'string',
 		'default' => 'no'
@@ -238,6 +246,14 @@ define('_ARGS_BASIC_CLEAN', [
 	'bc_rest_list' => [
 		'type' => 'string',
 		'default' => 'no'
+	],
+	'bc_headers' => [
+		'type' => 'string',
+		'default' => 'yes'
+	],
+	'bc_cors' => [
+		'type' => 'string',
+		'default' => 'default'
 	],
 	'bc_folders' => [
 		'type' => 'string',
@@ -444,6 +460,14 @@ define('_ADMIN_BASIC_CLEAN', [
 				'label' => 'Use Media Folders',
 				'type' => 'check'
 			],
+			'bc_user_redirect' => [
+				'label' => 'Redirect these roles to front-end',
+				'type' => 'input'
+			],
+			'bc_redirect_url' => [
+				'label' => 'URL to redirect users to',
+				'type' => 'input'
+			]
 		]
 	],
 	'fonts' => [
@@ -506,6 +530,33 @@ define('_ADMIN_BASIC_CLEAN', [
 			]
 		]
 	],
+	'security' => [
+		'label' => 'Security',
+		'columns' => 4,
+		'fields' => [
+			'bc_rest_users' => [
+				'label' => 'Enable Listing Users by REST',
+				'type' => 'check'
+			],
+			'bc_rest_list' => [
+				'label' => 'Enable Listing Endpoints by REST',
+				'type' => 'check'
+			],
+			'bc_headers' => [
+				'label' => 'Enable Security Headers',
+				'type' => 'check'
+			],
+			'bc_cors' => [
+				'label' => 'Set CORS Headers',
+				'type' => 'select',
+				'values' => [
+					'default' => 'Default',
+					'open' => 'Open',
+					'strict' => 'Strict'
+				]
+			]
+		]
+	],
 	'cleanup' => [
 		'label' => 'Cleanup',
 		'columns' => 4,
@@ -536,14 +587,6 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_dashboard' => [
 				'label' => 'Remove WP Dashboard Widgets',
-				'type' => 'check'
-			],
-			'bc_rest_users' => [
-				'label' => 'Enable Listing Users by REST',
-				'type' => 'check'
-			],
-			'bc_rest_list' => [
-				'label' => 'Enable Listing Endpoints by REST',
 				'type' => 'check'
 			]
 		]
@@ -2616,6 +2659,21 @@ function bc_set_cache_control() {
 	header('Cache-Control: max-age=' . _BC['bc_cache']);
 }
 
+// security headers
+
+function bc_security_headers() {
+	header('X-Content-Type-Options: nosniff');
+	header('X-Frame-Options: DENY');
+	header('X-XSS-Protection: 1; mode=block');
+	header('Strict-Transport-Security: max-age=300; includeSubDomains');
+}
+
+// cors headers
+
+function bc_cors_headers() {
+	// TODO
+}
+
 // custom feeds stuff
 
 function disable_feed() {
@@ -2650,6 +2708,21 @@ function custom_feed() {
 	</channel>
 </rss>
 <?php
+}
+
+// user role redirect
+
+function bc_user_redirect($redirect_to, $request, $user)
+{
+	if (isset($user->roles) && is_array($user->roles)) {
+		$roles = explode(',', _BC['bc_user_redirect']);
+
+		if (count(array_intersect($roles, $user->roles))) {
+			return home_url(_BC['bc_redirect_url']);
+		}
+	}
+
+	return !empty($redirect_to) ? $redirect_to : admin_url();
 }
 
 
@@ -3212,6 +3285,14 @@ if ((!is_admin()) && (_BC['bc_cache'] != false)) {
 	add_action('send_headers', 'bc_set_cache_control');
 }
 
+if (_BC['bc_headers'] == 'yes') {
+	add_action('send_headers', 'bc_security_headers');
+}
+
+if (_BC['bc_cors'] != 'default') {
+	add_action('send_headers', 'bc_cors_headers');
+}
+
 if (_BC['bc_sitemap'] == 'yes') {
 	add_filter('wp_sitemaps_enabled', '__return_false');
 }
@@ -3375,6 +3456,12 @@ if (_BC['bc_rest_list'] != 'yes') {
 			['status' => 404]
 		);
 	});
+}
+
+// user role redirect
+
+if (_BC['bc_user_redirect'] != '') {
+	add_filter('login_redirect', 'bc_user_redirect', 10, 3);
 }
 
 remove_action('shutdown', 'wp_ob_end_flush_all', 1);

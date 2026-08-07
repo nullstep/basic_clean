@@ -35,6 +35,8 @@ jQuery(function($) {
 		'bc_rest_users',
 		'bc_rest_list',
 		'bc_htaccess',
+		'bc_headers',
+		'bc_cors',
 		'bc_fa',
 		'bc_fa_load',
 		'bc_fab',
