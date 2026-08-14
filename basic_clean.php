@@ -7,7 +7,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.15
+ * Version: 1.3.16
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -20,13 +20,13 @@ define('_URL_BASIC_CLEAN', plugin_dir_url(__FILE__));
 define('_PATH_BASIC_CLEAN', plugin_dir_path(__FILE__));
 
 
-//   ▄████████   ▄██████▄   ███▄▄▄▄▄       ▄████████  
-//  ███    ███  ███    ███  ███▀▀▀▀██▄    ███    ███  
-//  ███    █▀   ███    ███  ███    ███    ███    █▀   
-//  ███         ███    ███  ███    ███   ▄███▄▄▄      
-//  ███         ███    ███  ███    ███  ▀▀███▀▀▀      
-//  ███    █▄   ███    ███  ███    ███    ███         
-//  ███    ███  ███    ███  ███    ███    ███         
+//   ▄████████   ▄██████▄   ███▄▄▄▄▄       ▄████████
+//  ███    ███  ███    ███  ███▀▀▀▀██▄    ███    ███
+//  ███    █▀   ███    ███  ███    ███    ███    █▀
+//  ███         ███    ███  ███    ███   ▄███▄▄▄
+//  ███         ███    ███  ███    ███  ▀▀███▀▀▀
+//  ███    █▄   ███    ███  ███    ███    ███
+//  ███    ███  ███    ███  ███    ███    ███
 //  ████████▀    ▀██████▀    ▀█    █▀     ███
 
 // random text words
@@ -271,6 +271,10 @@ define('_ARGS_BASIC_CLEAN', [
 		'default' => 'no'
 	],
 	'bc_form_active' => [
+		'type' => 'string',
+		'default' => 'no'
+	],
+	'bc_form_captcha' => [
 		'type' => 'string',
 		'default' => 'no'
 	],
@@ -605,6 +609,10 @@ define('_ADMIN_BASIC_CLEAN', [
 			],
 			'bc_form_db' => [
 				'label' => 'Store Form Submissions',
+				'type' => 'check'
+			],
+			'bc_form_captcha' => [
+				'label' => 'Enable Captcha',
 				'type' => 'check'
 			],
 			'bc_mail_log' => [
@@ -2725,6 +2733,31 @@ function bc_user_redirect($redirect_to, $request, $user)
 	return !empty($redirect_to) ? $redirect_to : admin_url();
 }
 
+// check if we have full smtp details
+
+function bc_check_smtp()
+{
+	$result = true;
+
+	if (empty(_BC['bc_smtp_host'])) {
+		$result = false;
+	}
+
+	if (empty(_BC['bc_smtp_port'])) {
+		$result = false;
+	}
+
+	if (empty(_BC['bc_smtp_username'])) {
+		$result = false;
+	}
+
+	if (empty(_BC['bc_smtp_password'])) {
+		$result = false;
+	}
+
+	return $result;
+}
+
 
 //     ▄████████     ▄█    █▄      ▄██████▄      ▄████████      ███      
 //    ███    ███    ███    ███    ███    ███    ███    ███  ▀█████████▄  
@@ -2779,7 +2812,6 @@ function bc_lorem_shortcode($atts = [], $content = null, $tag = '') {
 }
 
 // form shortcode
-// THIS NEEDS UPDATING
 
 function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 	$html = '';
@@ -2794,9 +2826,17 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 
 			$html .= '<div class="alert alert-success alert-dismissible fade text-center" role="alert" id="contact-msg"></div>';
 
-			$html .= '<form id="' . $index . '-form">';
+			$mailchimp = (isset($form['mailchimp'])) ? $form['mailchimp'] : false;
+			$submit_button_text = $forms[$index]['submit_button_text'] ?? 'Send';
+			$show_labels = $forms[$index]['show_labels'] ?? true;
+			$show_placeholders = $forms[$index]['show_placeholders'] ?? true;
 
-			$placeholders = $form['placeholders'] ?? false;
+			if ($mailchimp) {
+				$html .= '<form action="' . $mailchimp['action'] . '" method="post" id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank">';
+			}
+			else {
+				$html .= '<form id="' . $index . '-form">';
+			}
 
 			foreach ($form['rows'] as $row) {
 				$html .= '<div class="row">';
@@ -2813,36 +2853,62 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 							$html .= '</div>';
 						}
 						else {
-							$name = str_replace([' ', '?'], ['_', ''], strtolower($field['label']));
+							$name = str_replace(' ', '_', strtolower($field['label']));
 							$req = ($field['required'] == 'yes') ? ' required' : '';
-							$label = $field['text'] ?? $field['label'];
-							$placeholder = ($placeholders) ? $field['label'] : '';
-
 							$html .= '<div class="mb-3">';
-							$html .= '<label for="' . $name . '" class="form-label">' . $label . (($req) ? ' *' : '') . '</label>';
+							$field_label = ($show_labels) ? '<label for="' . $name . '" class="form-label">' . $field['label'] . (($req) ? ' *' : '') . '</label>' : '';
+							$placeholder = ($show_placeholders) ? ' placeholder="' . $field['label'] . ' ' . (($req) ? '*' : '') . '" ' : '';
 
 							switch ($field['type']) {
 								case 'textarea': {
-									$html .= '<textarea maxlength="2000" id="' . $name . '" class="form-control" name="' . $name . '" placeholder="' . $placeholder . '"' . $req . '></textarea>';
+									$html .= $field_label;
+									$html .= '<textarea' . $req . ' maxlength="2000" id="' . $name . '" class="form-control" name="' . (($mailchimp) ? $field['field'] : $name) . '"' . $placeholder . 'aria-label="' . $field['label'] . '"></textarea>';
+									break;
+								}
+								case 'number': {
+									$html .= $field_label;
+									$step = ($field['step']) ? ' step="' . $field['step'] . '"' : '';
+									$min = ($field['min']) ? ' min="' . $field['min'] . '"' : '';
+									$max = ($field['max']) ? ' max="' . $field['max'] . '"' : '';
+									$html .= '<input' . $req . ' id="' . $name . '" type="number" class="form-check-input" name="' . (($mailchimp) ? $field['field'] : $name) . '" aria-label="' . $field['label'] . '"' . $fval . '"' . $step . $min . $max . '>';
 									break;
 								}
 								case 'checkbox': {
-									$html .= '<br><input id="' . $name . '" type="checkbox" class="form-check-input" name="' . $name . '"' . $req . '>';
+									$html .= $field_label;
+									$html .= '<input' . $req . ' id="' . $name . '" type="checkbox" class="form-check-input" name="' . (($mailchimp) ? $field['field'] : $name) . '" aria-label="' . $field['label'] . '">';
 									break;
 								}
 								case 'select': {
-									$html .= '<select id="' . $name . '" type="' . $field['type'] . '" class="form-control" name="' . $name . '"' . $req . '>';
-										$html .= '<option value="">Please Select&hellip;</option>';
-										if (isset($field['options'])) {
-											foreach ($field['options'] as $value => $option) {
-												$html .= '<option value="' . $value . '">' . $option . '</option>';
-											}
-										}
+									$html .= $field_label;
+									$html .= '<select' . $req . ' id="' . $name . '" class="form-select" name="' . (($mailchimp) ? $field['field'] : $name) . '" aria-label="' . $field['label'] . '">';
+									$html .= '<option value="">Select ' . $field['label'] . '&hellip;</option>';
+									foreach ($field['values'] as $value => $label) {
+										$html .= '<option value="' . $value . '"' . '>' . $label . '</option>';
+									}
 									$html .= '</select>';
 									break;
 								}
+								case 'radio': {
+									foreach ($field['values'] as $value => $label) {
+										$html .= '<div class="form-check form-check-inline">';
+										$html .= '<input' . $req . ' class="form-check-input" type="radio" id="' . $name . '_' . $value . '" name="' . (($mailchimp) ? $field['field'] : $name) . '" value="' . $value . '">';
+										$html .= '<label class="form-check-label" for="' . $name . '_' . $value . '">' . $label . '</label>';
+										$html .= '</div>';
+									}
+									break;
+								}
+								case 'multi': {
+									foreach ($field['values'] as $value => $label) {
+										$html .= '<div class="form-check form-check-inline">';
+										$html .= '<input' . $req . ' class="form-check-input" type="checkbox" id="' . $name . '_' . $value . '" name="' . (($mailchimp) ? $field['field'] : $name) . '_' . $value . '" value="' . $value . '" aria-label="' . $field['label'] . '">';
+										$html .= '<label class="form-check-label" for="' . $name . '_' . $value . '">' . $label . '</label>';
+										$html .= '</div>';
+									}
+									break;
+								}
 								default: {
-									$html .= '<input id="' . $name . '" type="' . $field['type'] . '" class="form-control" name="' . $name . '" placeholder="' . $placeholder . '"' . $req . '>';
+									$html .= $field_label;
+									$html .= '<input' . $req . ' id="' . $name . '" type="' . $field['type'] . '" class="form-control" name="' . (($mailchimp) ? $field['field'] : $name) . '"' . $placeholder . 'aria-label="' . $field['label'] . '">';
 								}
 							}
 
@@ -2857,21 +2923,92 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 				$html .= '</div>';
 			}
 			$html .= '<div class="mb-3">';
-			$html .= '<input type="hidden" name="action" value="form_action">';
-			$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
-			$html .= wp_nonce_field('form_action', '_bc_nonce', true, false);
-			$html .= '<input class="btn btn-primary" id="contact-button" type="submit" value="Send">';
+
+			if ($mailchimp) {
+				$html .= '<div style="position: absolute; left: -5000px;" aria-hidden="true">';
+					$html .= '<input type="text" name="' . $mailchimp['spam'] . '" tabindex="-1" value="">';
+				$html .= '</div>';
+				$html .= '<input type="submit" name="subscribe" id="mc-embedded-subscribe" class="button" value="' . $submit_button_text . '">';
+			}
+			else {
+				$html .= '<input type="hidden" name="action" value="form_action">';
+				$html .= '<input type="hidden" name="form_id" value="' . $index . '">';
+				$html .= wp_nonce_field('form_action', 'nonce', true, false);
+				$html .= '<input class="btn btn-primary submit-button" type="button" value="' . $submit_button_text . '">';
+			}
 			$html .= '</div>';
 
 			if ($m) {
-				$html .= '<p class="req-field">* <i>indicates a required field</i></p>';
+				$html .= '<p class="req-field">* indicates a required field</p>';
 			}
+
+			if (_BC['bc_form_captcha'] == 'yes') {
+				$html .= '<script async defer src="https://captcha.xayr.in/altcha.min.js" type="module"></script><altcha-widget challenge="https://captcha.xayr.in/challenge"></altcha-widget>';
+			}
+
 			$html .= '</form>';
 
 			$url = admin_url('admin-ajax.php');
 
-			$html .= '<script>document.getElementById("' . $index . '-form").addEventListener("submit",function(event){
-			event.preventDefault();if(this.checkValidity()){let m=$("#contact-msg");m.text("...");let f=$("#' . $index . '-form");$.ajax({type:"POST",url:"' . $url . '",data:f.serialize(),dataType:"json",success:function(res){if(res.status=="success"){f[0].reset();}m.text(res.message).addClass("show");}});}else{alert("form error");}});</script>';
+			if ($mailchimp) {
+				$html .= '<div id="mce-responses">';
+					$html .= '<div class="response" id="mce-error-response" style="display:none"></div>';
+					$html .= '<div class="response" id="mce-success-response" style="display:none"></div>';
+				$html .= '</div>';
+
+				$mc_script = '<script src="//s3.amazonaws.com/downloads.mailchimp.com/js/mc-validate.js"></script><script>(function($) {window.fnames = new Array(); window.ftypes = new Array();fnames[0]="EMAIL";ftypes[0]="email";fnames[1]="FNAME";ftypes[1]="text";fnames[2]="LNAME";ftypes[2]="text";fnames[6]="COMPANY";ftypes[6]="text";fnames[3]="ADDRESS";ftypes[3]="address";fnames[4]="PHONE";ftypes[4]="phone";fnames[5]="BIRTHDAY";ftypes[5]="birthday";}(jQuery));var $mcj = jQuery.noConflict(true);</script>';
+
+				$html .= apply_filters('bc_mc_script', $mc_script);
+
+				$html .= '<script>M={s:function(){$.ajax({type:"POST",url:"' . $url . '",data:{"nonce":"' . wp_create_nonce('form_action') . '","action":"form_action","form_id":"' . $index . '"},dataType:"json",success:function(res){if(res.status=="success"){$("#mc-embedded-subscribe-form")[0].reset();if(res.action=="redirect"){window.location.replace(res.value);}}}});},e:function(){console.log("error")}};const o=new MutationObserver(()=>{M.s();});o.observe(document.getElementById("mce-success-response"),{attributes:true,childList:true,subtree:true});</script>';
+			}
+			else {
+				$html .= '<div id="form-msg"></div>';
+
+				$js = <<<HTML
+					<script>
+						document.addEventListener('DOMContentLoaded', function() {
+							jQuery(function($) {
+								$('form#{$index}-form').on('click', '.submit-button', function() {
+									var f = $('#{$index}-form');
+									var m = $('#form-msg');
+									m.text('...');
+									if (!f[0].checkValidity()) {
+										f[0].reportValidity();
+										m.text('Please complete all the required fields.');
+										return false;
+									}
+									else {
+										$.ajax({
+											type: 'POST',
+											url: '{$url}',
+											data: f.serialize(),
+											dataType: 'json',
+											success: function(res) {
+												if (res.status == 'success') {
+													f[0].reset();
+													if (res.action == 'redirect') {
+														window.location.replace(res.value);
+														m.text('Redirecting');
+													}
+													else {
+														m.text(res.value);
+													}
+												}
+												else {
+													m.text('There was an error sending your form data.');
+												}
+											}
+										});
+									}
+								});
+							});
+						});
+					</script>
+				HTML;
+
+				$html .= $js;
+			}
 		}
 	}
 
@@ -2885,12 +3022,75 @@ function bc_contact_form_callback() {
 		$error = 'verification error, try again.';
 	}
 	else {
+		if (_BC['bc_form_captcha'] == 'yes') {
+			// need to verify "altcha" field
+
+			$check = $_POST['altcha'] ?? '';
+
+			if ($check == '') {
+				die(json_encode([
+					'status' => 'error',
+					'action' => 'message',
+					'value' => 'missing captcha verification'
+				]));
+			}
+
+			$url = 'https://captcha.xayr.in/submit';
+
+			$response = wp_remote_post($url, [
+				'timeout' => 20,
+				'body' => [
+					'altcha' => $_POST['altcha']
+				]
+			]);
+
+			if (is_wp_error($response)) {
+				die(json_encode([
+					'status' => 'error',
+					'action' => 'message',
+					'value' => 'captcha server error'
+				]));
+			}
+
+			$body = json_decode(wp_remote_retrieve_body($response), true);
+
+			if ($body['verification']['verified'] != true) {
+				die(json_encode([
+					'status' => 'error',
+					'action' => 'message',
+					'value' => 'captcha verification failed'
+				]));
+			}
+		}
+
 		$index = $_POST['form_id'];
 		$forms = json_decode(_BC['bc_form_json'], true);
 		$message = 'IP address: ' . $_SERVER['REMOTE_ADDR'] . "\n\n";
 
 		if (array_key_exists($index, $forms)) {
 			$form = $forms[$index];
+
+			$success = $form['success'] ?? [];
+			$success['action'] = $success['action'] ?? 'message';
+			$success['value'] = $success['value'] ?? '';
+
+			$mailchimp = isset($form['mailchimp']) ? $form['mailchimp'] : false;
+
+			if ($mailchimp) {
+				$json = [
+					'status' => 'success',
+					'action' => $success['action'],
+					'value' => $success['value']
+				];
+
+				header('Content-Type: application/json');
+				die(json_encode($json));
+			}
+
+			do_action('s9u_mc_form_sent', $form, $_POST);
+
+			$reply_email = $form['reply_email'] ?? false;
+
 			foreach ($form['rows'] as $row) {
 				foreach ($row['cols'] as $col) {
 					foreach ($col['fields'] as $field) {
@@ -2906,6 +3106,14 @@ function bc_contact_form_callback() {
 								}
 								case 'message': {
 									$sane = stripslashes($_POST[$name]);
+									break;
+								}
+								case 'multi': {
+									$array = [];
+									foreach ($field['values'] as $value => $label) {
+										$array[] = stripslashes($_POST[$name . '_' . $value]);
+									}
+									$sane = implode(', ', $array);
 									break;
 								}
 								default: {
@@ -2929,27 +3137,59 @@ function bc_contact_form_callback() {
 		}
 
 		$subject = 'A messsage from ' . get_option('blogname');
-		$sendmsg = $form['success_msg'];
 		$to = $form['send_to'];
 
 		$parsed = parse_url(site_url());
 
 		$header = 'From: ' . get_option('blogname') . ' <no-reply@' . $parsed['host'] . '>' . "\n";
-		$header .= 'Reply-To: ' . $email . "\n";
 
-		if (wp_mail($to, $subject, $message, $header)) {
-			$status = 'success';
-			$message = $sendmsg;
+		if ($reply_email) {
+			$header .= 'Reply-To: ' . $reply_email . "\n";
+		}
+
+		if (bc_check_smtp()) {
+			$mailed = bc_send_email($to, $subject, $message, $header);
 		}
 		else {
-			$status = 'failed';
-			$message = 'error(s)';
+			$mailed = wp_mail($to, $subject, $message, $header);
+		}
+
+		$status = ($mailed) ? 'success' : 'error';
+		$title = '';
+
+		if (isset($_POST['name'])) {
+			$title = htmlspecialchars($_POST['name']);
+		}
+		else {
+			if (isset($_POST['first_name'])) {
+				$title = htmlspecialchars($_POST['first_name']);
+
+				if (isset($_POST['last_name'])) {
+					$title .= ' ' . htmlspecialchars($_POST['last_name']);
+				}
+			}
+		}
+
+		if ($title == '') {
+			$title = 'Form Submission';
+		}
+
+		if (_BC['bc_form_db'] == 'yes') {
+			$pid = wp_insert_post([
+				'post_title' => $title,
+				'post_type' => 'form_log',
+				'post_content' => $status . "\n\n" . wp_strip_all_tags($message),
+				'post_status' => 'publish',
+				'post_author' => 1,
+				'post_category' => []
+			]);
 		}
 	}
 
 	$json = [
 		'status' => $status,
-		'message' => $message
+		'action' => $success['action'],
+		'value' => $success['value']
 	];
 	
 	header('Content-Type: application/json');

@@ -60,6 +60,7 @@ jQuery(function($) {
 		'bc_form_json',
 		'bc_form_db',
 		'bc_form_active',
+		'bc_form_captcha',
 		'bc_mail_log'
 	];
 	const editors = [
