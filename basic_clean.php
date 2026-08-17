@@ -2952,6 +2952,9 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 			else {
 				$html .= '<div id="form-msg"></div>';
 
+				$js = '<script>document.addEventListener("DOMContentLoaded",function(){jQuery(function($){$("form#' . $index . '-form").on("click",".submit-button",function(){var f=$("#' . $index . '-form");var m=$("#form-msg");m.text("...");if(!f[0].checkValidity()){f[0].reportValidity();m.text("Please complete all the required fields.");return false;}else{$.ajax({type:"POST",url:"' . $url . '",data:f.serialize(),dataType:"json",success:function(res){if(res.status=="success"){f[0].reset();if(res.action=="redirect"){window.location.replace(res.value);m.text("Redirecting");}else{m.text(res.value);}}else{m.text("There was an error sending your form data.");}}});}});});});</script>';
+
+/*
 				$js = <<<HTML
 					<script>
 						document.addEventListener('DOMContentLoaded', function() {
@@ -2993,7 +2996,7 @@ function bc_form_shortcode($atts = [], $content = null, $tag = '') {
 						});
 					</script>
 				HTML;
-
+*/
 				$html .= $js;
 			}
 		}
