@@ -2577,22 +2577,9 @@ function bc_admin_notice_error() {
 // stop wp whining about stupid stuff
 
 function bc_remove_hysterical_checks($tests) {
-	unset($tests['direct']['php_sessions']);
-	unset($tests['direct']['rest_availability']);
-	unset($tests['direct']['php_version']);
-	unset($tests['direct']['php_extensions']);
-	unset($tests['direct']['php_default_timezone']);
-	unset($tests['direct']['php_sessions']);
-	unset($tests['direct']['sbi_test_check_errors']);
-	unset($tests['direct']['wordpress_version']);
-	unset($tests['direct']['plugin_version']);
-	unset($tests['direct']['theme_version']);
-	unset($tests['direct']['rsssl_ssl_health']);
-	unset($tests['direct']['persistent_object_cache']);
-	unset($tests['direct']['headers_test']);
-	unset($tests['direct']['sbi_test_check_errors']);
-	unset($tests['direct']['wp_cache_status']);
-	
+	$tests['direct'] = [];
+	unset($tests['async']['page_cache']);
+
 	return $tests;
 }
 
