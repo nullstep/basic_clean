@@ -7,7 +7,7 @@
  * Description: make it better
  * Author: nullstep
  * Author URI: https://nullstep.com
- * Version: 1.3.16
+ * Version: 1.3.17
 */
 
 defined('ABSPATH') or die('⎺\_(ツ)_/⎺');
@@ -333,27 +333,27 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 3,
 		'fields' => [
 			'bc_analytics' => [
-				'label' => 'Analytics/Tracking Code',
+				'label' => 'Analytics and tracking code',
 				'type' => 'code'
 			],
 			'bc_ignore' => [
-				'label' => 'IP Addresses to Ignore for Page View Count',
+				'label' => 'IP addresses to ignore for page view count',
 				'type' => 'text'
 			],
 			'bc_random_text' => [
-				'label' => 'Text Generator Source',
+				'label' => 'Text generator source',
 				'type' => 'text'
 			],
 			'bc_indent' => [
-				'label' => 'Tab Indents',
+				'label' => 'Tab indents',
 				'type' => 'input'
 			],
 			'bc_cookies' => [
-				'label' => 'Cookie Consent Active',
+				'label' => 'Cookie consent active',
 				'type' => 'check'
 			],
 			'bc_cookie_style' => [
-				'label' => 'Cookie Consent Style',
+				'label' => 'Cookie consent style',
 				'type' => 'select',
 				'values' => [
 					'bar' => 'Bar',
@@ -362,7 +362,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				]
 			],
 			'bc_position' => [
-				'label' => 'Show in Main Admin Menu',
+				'label' => 'Show in main admin menu',
 				'type' => 'check'
 			],
 			'bc_duplicate' => [
@@ -376,11 +376,11 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 4,
 		'fields' => [
 			'bc_logo' => [
-				'label' => 'WP Login Logo',
+				'label' => 'WP login logo',
 				'type' => 'file'
 			],
 			'bc_feeds' => [
-				'label' => 'WP Feeds',
+				'label' => 'WP feeds',
 				'type' => 'select',
 				'values' => [
 					'disable' => 'Disabled',
@@ -389,7 +389,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				]
 			],
 			'bc_login' => [
-				'label' => 'Change Login URL',
+				'label' => 'Change login URL',
 				'type' => 'check'
 			],
 			'bc_path' => [
@@ -397,43 +397,43 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'input'
 			],
 			'bc_options' => [
-				'label' => 'Set WP Options',
+				'label' => 'Set WP options',
 				'type' => 'check'
 			],
 			'bc_nocat' => [
-				'label' => 'No Category Base',
+				'label' => 'No category base',
 				'type' => 'check'
 			],
 			'bc_mimes' => [
-				'label' => 'Allow Additional Upload Types',
+				'label' => 'Allow additional upload types',
 				'type' => 'check'
 			],
 			'bc_unfiltered' => [
-				'label' => 'Allow Unfiltered Uploads',
+				'label' => 'Allow unfiltered uploads',
 				'type' => 'check'
 			],
 			'bc_cols' => [
-				'label' => 'Show Extra Page/Post Columns',
+				'label' => 'Show extra page/post columns',
 				'type' => 'check'
 			],
 			'bc_comments' => [
-				'label' => 'Allow Comments',
+				'label' => 'Allow comments',
 				'type' => 'check'
 			],
 			'bc_debug' => [
-				'label' => 'Show Last PHP Error Notice',
+				'label' => 'Show last PHP error notice',
 				'type' => 'check'
 			],
 			'bc_hysteria' => [
-				'label' => 'Stop WP Hysterical Health Warnings',
+				'label' => 'Stop hysterical health warnings and admin email checks',
 				'type' => 'check'
 			],
 			'bc_backtrace' => [
-				'label' => 'Enable Custom PHP Backtrace',
+				'label' => 'Enable custom PHP backtrace',
 				'type' => 'check'
 			],
 			'bc_wp_options' => [
-				'label' => 'Enable wp_options Editor Submenu',
+				'label' => 'Enable wp_options editor submenu',
 				'type' => 'check'
 			],
 			'bc_pw_notify' => [
@@ -445,7 +445,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'check'
 			],
 			'bc_shortcode_lorem' => [
-				'label' => 'Lorem Shortcode Active',
+				'label' => 'Lorem shortcode active',
 				'type' => 'check'
 			],
 			'bc_cache' => [
@@ -453,15 +453,15 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'input'
 			],
 			'bc_sitemap' => [
-				'label' => 'XML Sitemap Active',
+				'label' => 'XML sitemap active',
 				'type' => 'check'
 			],
 			'bc_ogmeta' => [
-				'label' => 'OpenGraph Meta Tags',
+				'label' => 'OpenGraph meta tags',
 				'type' => 'check'
 			],
 			'bc_folders' => [
-				'label' => 'Use Media Folders',
+				'label' => 'Use media folders',
 				'type' => 'check'
 			],
 			'bc_user_redirect' => [
@@ -539,19 +539,19 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 4,
 		'fields' => [
 			'bc_rest_users' => [
-				'label' => 'Enable Listing Users by REST',
+				'label' => 'Enable listing users by REST',
 				'type' => 'check'
 			],
 			'bc_rest_list' => [
-				'label' => 'Enable Listing Endpoints by REST',
+				'label' => 'Enable listing endpoints by REST',
 				'type' => 'check'
 			],
 			'bc_headers' => [
-				'label' => 'Enable Security Headers',
+				'label' => 'Enable security headers',
 				'type' => 'check'
 			],
 			'bc_cors' => [
-				'label' => 'Set CORS Headers',
+				'label' => 'Set CORS headers',
 				'type' => 'select',
 				'values' => [
 					'default' => 'Default',
@@ -566,31 +566,31 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 4,
 		'fields' => [
 			'bc_cleaning' => [
-				'label' => 'WP Cleanup Active',
+				'label' => 'WP cleanup active',
 				'type' => 'check'
 			],
 			'bc_htaccess' => [
-				'label' => 'Short Upload URLs',
+				'label' => 'Short upload URLs',
 				'type' => 'check'
 			],
 			'bc_global' => [
-				'label' => 'Remove Global Styles',
+				'label' => 'Remove global styles',
 				'type' => 'check'
 			],
 			'bc_classic' => [
-				'label' => 'Remove Classic Styles',
+				'label' => 'Remove classic styles',
 				'type' => 'check'
 			],
 			'bc_core_block' => [
-				'label' => 'Remove Core Block Supports Styles',
+				'label' => 'Remove core block supports styles',
 				'type' => 'check'
 			],
 			'bc_blocks' => [
-				'label' => 'Remove Block Styles',
+				'label' => 'Remove block styles',
 				'type' => 'check'
 			],
 			'bc_dashboard' => [
-				'label' => 'Remove WP Dashboard Widgets',
+				'label' => 'Remove WP dashboard widgets',
 				'type' => 'check'
 			]
 		]
@@ -600,23 +600,23 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 1,
 		'fields' => [
 			'bc_form_json' => [
-				'label' => 'Forms JSON Config',
+				'label' => 'Forms JSON config',
 				'type' => 'code'
 			],
 			'bc_form_active' => [
-				'label' => 'Forms Active',
+				'label' => 'Forms active',
 				'type' => 'check'
 			],
 			'bc_form_db' => [
-				'label' => 'Store Form Submissions',
+				'label' => 'Store form submissions',
 				'type' => 'check'
 			],
 			'bc_form_captcha' => [
-				'label' => 'Enable Captcha',
+				'label' => 'Enable captcha',
 				'type' => 'check'
 			],
 			'bc_mail_log' => [
-				'label' => 'Show Mail Errors',
+				'label' => 'Show mail errors',
 				'type' => 'check'
 			]
 		]
@@ -626,7 +626,7 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 1,
 		'fields' => [
 			'bc_email_html' => [
-				'label' => 'HTML Email Template',
+				'label' => 'HTML email template',
 				'type' => 'code'
 			]
 		]
@@ -636,19 +636,19 @@ define('_ADMIN_BASIC_CLEAN', [
 		'columns' => 4,
 		'fields' => [
 			'bc_smtp_host' => [
-				'label' => 'SMTP Host',
+				'label' => 'SMTP host',
 				'type' => 'input'
 			],
 			'bc_smtp_port' => [
-				'label' => 'SMTP Port',
+				'label' => 'SMTP port',
 				'type' => 'input'
 			],
 			'bc_smtp_username' => [
-				'label' => 'SMTP Username',
+				'label' => 'SMTP username',
 				'type' => 'input'
 			],
 			'bc_smtp_password' => [
-				'label' => 'SMTP Password',
+				'label' => 'SMTP password',
 				'type' => 'input'
 			],
 			'bc_smtp_from' => [
@@ -656,7 +656,7 @@ define('_ADMIN_BASIC_CLEAN', [
 				'type' => 'input'
 			],
 			'bc_smtp_log' => [
-				'label' => 'Log Sending',
+				'label' => 'Log sends',
 				'type' => 'check'
 			]
 		]
@@ -3663,6 +3663,7 @@ if (_BC['bc_dashboard'] == 'yes') {
 
 if (_BC['bc_hysteria'] == 'yes') {
 	add_filter('site_status_tests', 'bc_remove_hysterical_checks');
+	add_filter('admin_email_check_interval', '__return_false');
 }
 
 if (_BC['bc_debug'] == 'yes') {
